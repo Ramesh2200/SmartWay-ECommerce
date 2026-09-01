@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns="https://jakarta.ee/xml/ns/jakartaee"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee https://jakarta.ee/xml/ns/jakartaee/web-app_5_0.xsd"
+         version="5.0">
+
+    <display-name>Ecommerce Gmail Email OTP Platform</display-name>
+
+    <!-- CORS Filter -->
+    <filter>
+        <filter-name>CorsFilter</filter-name>
+        <filter-class>com.ecommerce.filter.CorsFilter</filter-class>
+    </filter>
+    <filter-mapping>
+        <filter-name>CorsFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+
+    <!-- Servlets -->
+    <servlet>
+        <servlet-name>SendEmailOtpServlet</servlet-name>
+        <servlet-class>com.ecommerce.controller.SendEmailOtpServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>SendEmailOtpServlet</servlet-name>
+        <url-pattern>/api/auth/send-email-otp</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>SendEmailOtpServlet</servlet-name>
+        <url-pattern>/api/auth/send-otp</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>VerifyEmailOtpServlet</servlet-name>
+        <servlet-class>com.ecommerce.controller.VerifyEmailOtpServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>VerifyEmailOtpServlet</servlet-name>
+        <url-pattern>/api/auth/verify-email-otp</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>VerifyEmailOtpServlet</servlet-name>
+        <url-pattern>/api/auth/verify-otp</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>TestSmtpServlet</servlet-name>
+        <servlet-class>com.ecommerce.controller.TestSmtpServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>TestSmtpServlet</servlet-name>
+        <url-pattern>/api/auth/test-smtp</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>RegisterServlet</servlet-name>
+        <servlet-class>com.ecommerce.controller.RegisterServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>RegisterServlet</servlet-name>
+        <url-pattern>/api/auth/register</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>LoginServlet</servlet-name>
+        <servlet-class>com.ecommerce.controller.LoginServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>LoginServlet</servlet-name>
+        <url-pattern>/api/auth/login</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>ForgotPasswordServlet</servlet-name>
+        <servlet-class>com.ecommerce.controller.ForgotPasswordServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>ForgotPasswordServlet</servlet-name>
+        <url-pattern>/api/auth/reset-password</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>ProductServlet</servlet-name>
+        <servlet-class>com.ecommerce.controller.ProductServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>ProductServlet</servlet-name>
+        <url-pattern>/api/products/*</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>OrderServlet</servlet-name>
+        <servlet-class>com.ecommerce.controller.OrderServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>OrderServlet</servlet-name>
+        <url-pattern>/api/orders/*</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>DatabaseHealthServlet</servlet-name>
+        <servlet-class>com.ecommerce.controller.DatabaseHealthServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>DatabaseHealthServlet</servlet-name>
+        <url-pattern>/api/health</url-pattern>
+    </servlet-mapping>
+
+</web-app>

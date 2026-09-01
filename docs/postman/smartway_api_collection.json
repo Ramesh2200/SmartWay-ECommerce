@@ -1,0 +1,153 @@
+{
+  "info": {
+    "name": "SmartWay E-Commerce REST API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Complete API Collection for SmartWay E-Commerce Platform"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080/api"
+    }
+  ],
+  "item": [
+    {
+      "name": "Products",
+      "item": [
+        {
+          "name": "Get All Products",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/products"
+          }
+        },
+        {
+          "name": "Get Product by ID",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/products/1"
+          }
+        },
+        {
+          "name": "Filter Options",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/products/filter-options"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Send Registration OTP",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/auth/send-email-otp",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\":\"user@example.com\"}"
+            }
+          }
+        },
+        {
+          "name": "Verify Registration OTP",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/auth/verify-email-otp",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\":\"user@example.com\",\"otp\":\"123456\"}"
+            }
+          }
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\":\"user@example.com\",\"password\":\"Password123!\"}"
+            }
+          }
+        },
+        {
+          "name": "Forgot Password Send OTP",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/auth/forgot-password/send-otp",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\":\"user@example.com\"}"
+            }
+          }
+        },
+        {
+          "name": "Forgot Password Verify OTP",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/auth/forgot-password/verify-otp",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\":\"user@example.com\",\"otp\":\"123456\"}"
+            }
+          }
+        },
+        {
+          "name": "Reset Password",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/auth/reset-password",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\":\"user@example.com\",\"newPassword\":\"NewPassword123!\"}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Orders",
+      "item": [
+        {
+          "name": "Create Order",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/orders",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"userId\":1,\"totalAmount\":1599,\"shippingAddress\":\"MG Road, Bengaluru\",\"paymentMethod\":\"RAZORPAY\",\"items\":[{\"productId\":1,\"quantity\":1,\"price\":1599}]}"
+            }
+          }
+        },
+        {
+          "name": "Get My Orders",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/orders/my-orders?userId=1"
+          }
+        },
+        {
+          "name": "Get Order by ID",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/orders/1"
+          }
+        },
+        {
+          "name": "Cancel Order",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/orders/1/cancel",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"userId\":1}"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

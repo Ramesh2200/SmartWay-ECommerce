@@ -1,0 +1,22 @@
+# Environment & Secrets
+.env
+*.env.local
+*.env.production
+
+# Build Directories & Artifacts
+backend/target/
+frontend/dist/
+frontend/build/
+frontend/node_modules/
+node_modules/
+*.war
+*.jar
+*.class
+
+# IDE & OS Files
+.DS_Store
+Thumbs.db
+.idea/
+*.iml
+.vscode/
+*.log

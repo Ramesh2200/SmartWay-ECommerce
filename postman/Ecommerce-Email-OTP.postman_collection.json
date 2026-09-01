@@ -1,0 +1,297 @@
+{
+  "info": {
+    "_postman_id": "ecom-email-otp-collection",
+    "name": "E-Commerce Email OTP",
+    "description": "Complete Postman collection for Real Gmail SMTP Email OTP Authentication with Java Servlets backend and MySQL.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. Send Email OTP",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"email\": \"test@gmail.com\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/send-email-otp",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "auth", "send-email-otp"]
+        },
+        "description": "Checks users table, generates 6-digit OTP, stores SHA-256 hash in MySQL, and dispatches HTML email via Gmail SMTP."
+      },
+      "response": [
+        {
+          "name": "OTP Sent Success",
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "body": "{\n    \"success\": true,\n    \"message\": \"OTP sent successfully to your email\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "2. Verify Correct OTP",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"email\": \"test@gmail.com\",\n    \"otp\": \"123456\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/verify-email-otp",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "auth", "verify-email-otp"]
+        },
+        "description": "Verifies 6-digit OTP matches stored hash within 5-minute expiry window."
+      },
+      "response": [
+        {
+          "name": "Verify Success",
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "body": "{\n    \"success\": true,\n    \"message\": \"Email verified successfully\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "3. Verify Wrong OTP",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"email\": \"test@gmail.com\",\n    \"otp\": \"000000\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/verify-email-otp",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "auth", "verify-email-otp"]
+        },
+        "description": "Rejects wrong OTP and increments attempt counter."
+      },
+      "response": [
+        {
+          "name": "Invalid OTP",
+          "status": "Bad Request",
+          "code": 400,
+          "_postman_previewlanguage": "json",
+          "body": "{\n    \"success\": false,\n    \"message\": \"Invalid OTP\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "4. Verify Expired OTP",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"email\": \"test@gmail.com\",\n    \"otp\": \"123456\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/verify-email-otp",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "auth", "verify-email-otp"]
+        },
+        "description": "Rejects OTP older than 5 minutes."
+      },
+      "response": [
+        {
+          "name": "Expired OTP",
+          "status": "Bad Request",
+          "code": 400,
+          "_postman_previewlanguage": "json",
+          "body": "{\n    \"success\": false,\n    \"message\": \"OTP expired\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "5. Resend OTP",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"email\": \"test@gmail.com\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/send-email-otp",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "auth", "send-email-otp"]
+        },
+        "description": "Tests the 60-second cooldown rate limiting before allowing an OTP resend."
+      },
+      "response": [
+        {
+          "name": "Cooldown Enforced",
+          "status": "Bad Request",
+          "code": 400,
+          "_postman_previewlanguage": "json",
+          "body": "{\n    \"success\": false,\n    \"message\": \"Please wait 48 seconds before requesting a new OTP\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "6. Register Verified Email",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"fullName\": \"Test User\",\n    \"email\": \"test@gmail.com\",\n    \"password\": \"Password@123\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/register",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "auth", "register"]
+        },
+        "description": "Registers a new user after successful email OTP verification, hashing password with BCrypt."
+      },
+      "response": [
+        {
+          "name": "Registration Success",
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "body": "{\n    \"success\": true,\n    \"message\": \"User registered successfully\",\n    \"data\": {\n        \"id\": 1,\n        \"fullName\": \"Test User\",\n        \"email\": \"test@gmail.com\",\n        \"emailVerified\": true\n    }\n}"
+        }
+      ]
+    },
+    {
+      "name": "7. Register Unverified Email",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"fullName\": \"Unverified User\",\n    \"email\": \"unverified@gmail.com\",\n    \"password\": \"Password@123\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/register",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "auth", "register"]
+        },
+        "description": "Rejects registration when email has not passed OTP verification."
+      },
+      "response": [
+        {
+          "name": "Unverified Rejection",
+          "status": "Bad Request",
+          "code": 400,
+          "_postman_previewlanguage": "json",
+          "body": "{\n    \"success\": false,\n    \"message\": \"Email has not been verified with OTP. Please complete email OTP verification first.\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "8. Already Authenticated Email",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"email\": \"test@gmail.com\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/send-email-otp",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "auth", "send-email-otp"]
+        },
+        "description": "Identifies registered verified email, prevents sending new OTP, returns alreadyAuthenticated."
+      },
+      "response": [
+        {
+          "name": "Already Authenticated",
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "body": "{\n    \"success\": false,\n    \"alreadyAuthenticated\": true,\n    \"message\": \"This email is already authenticated. Please login.\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "9. Login",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"email\": \"test@gmail.com\",\n    \"password\": \"Password@123\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/login",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "auth", "login"]
+        },
+        "description": "Authenticates user using email and password via BCrypt verification."
+      },
+      "response": [
+        {
+          "name": "Login Success",
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "body": "{\n    \"success\": true,\n    \"message\": \"Login successful\",\n    \"data\": {\n        \"id\": 1,\n        \"fullName\": \"Test User\",\n        \"email\": \"test@gmail.com\",\n        \"emailVerified\": true\n    }\n}"
+        }
+      ]
+    },
+    {
+      "name": "10. Invalid Login",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"email\": \"test@gmail.com\",\n    \"password\": \"WrongPassword\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/login",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "auth", "login"]
+        },
+        "description": "Rejects login when password does not match BCrypt hash."
+      },
+      "response": [
+        {
+          "name": "Invalid Login",
+          "status": "Unauthorized",
+          "code": 401,
+          "_postman_previewlanguage": "json",
+          "body": "{\n    \"success\": false,\n    \"message\": \"Invalid email or password\"\n}"
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080/Ecommerce",
+      "type": "string"
+    }
+  ]
+}
