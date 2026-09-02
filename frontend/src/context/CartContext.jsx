@@ -100,12 +100,12 @@ export const CartProvider = ({ children }) => {
 
   const subtotal = cart.reduce((sum, item) => sum + (Number(item.price) || 0) * (item.quantity || 1), 0);
   const totalItems = cart.reduce((sum, item) => sum + (item.quantity || 1), 0);
-  const isFreeShipping = subtotal >= FREE_SHIPPING_THRESHOLD || cart.length === 0;
-  const shippingFee = isFreeShipping ? 0 : STANDARD_SHIPPING_FEE;
-  const amountNeededForFreeShipping = Math.max(0, FREE_SHIPPING_THRESHOLD - subtotal);
-  const freeShippingProgress = Math.min(100, Math.round((subtotal / FREE_SHIPPING_THRESHOLD) * 100));
-  const estimatedTax = Math.round((subtotal - discountAmount) * 0.18); // 18% GST
-  const grandTotal = Math.max(0, subtotal - discountAmount + shippingFee + estimatedTax);
+  const isFreeShipping = true; // All orders include Free Delivery
+  const shippingFee = 0;
+  const amountNeededForFreeShipping = 0;
+  const freeShippingProgress = 100;
+  const estimatedTax = Math.round(((subtotal - discountAmount) * 18) / 118); // GST included in price
+  const grandTotal = Math.max(0, subtotal - discountAmount + shippingFee);
 
   return (
     <CartContext.Provider

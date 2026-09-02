@@ -470,10 +470,15 @@ export const CheckoutPage = () => {
           )}
 
           <div className="summary-row" style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0', color: 'var(--text-secondary)' }}>
-            <span>Shipping</span>
+            <span>Delivery</span>
             <span style={{ color: 'var(--success)', fontWeight: 700 }}>
-              {isFreeShipping ? 'FREE' : `₹${shippingFee}`}
+              FREE
             </span>
+          </div>
+
+          <div className="summary-row" style={{ display: 'flex', justifyContent: 'space-between', padding: '0.35rem 0', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
+            <span>Includes GST (18%)</span>
+            <span>₹{estimatedTax.toLocaleString('en-IN')}</span>
           </div>
 
           <div className="summary-total-row" style={{ display: 'flex', justifyContent: 'space-between', padding: '1rem 0 0', marginTop: '0.5rem', borderTop: '1px solid var(--border-subtle)', fontSize: '1.25rem', fontWeight: 900, color: '#fff' }}>

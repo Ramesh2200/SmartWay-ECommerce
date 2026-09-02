@@ -842,9 +842,9 @@ function normalizeOrder(order) {
   const items = Array.from(mergedItemsMap.values());
   const calculatedSubtotal = items.reduce((sum, it) => sum + (it.unitPrice * it.quantity), 0);
   const discountAmount = Number(order.discountAmount || 0);
-  const shippingFee = Number(order.shippingFee !== undefined ? order.shippingFee : (calculatedSubtotal >= 999 ? 0 : 99));
-  const taxAmount = Number(order.taxAmount !== undefined ? order.taxAmount : Math.round((calculatedSubtotal - discountAmount) * 0.18));
-  const totalAmount = Number(order.totalAmount || order.grandTotal || (calculatedSubtotal - discountAmount + shippingFee + taxAmount));
+  const shippingFee = Number(order.shippingFee !== undefined ? order.shippingFee : 0);
+  const taxAmount = Math.round(((calculatedSubtotal - discountAmount) * 18) / 118);
+  const totalAmount = Math.max(0, calculatedSubtotal - discountAmount + shippingFee);
 
   return {
     ...order,

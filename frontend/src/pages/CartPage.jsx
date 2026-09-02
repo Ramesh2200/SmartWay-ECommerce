@@ -220,20 +220,20 @@ export const CartPage = () => {
           )}
 
           <div className="summary-row">
-            <span>Shipping Fee</span>
-            <span style={{ color: isFreeShipping ? 'var(--success)' : '#fff', fontWeight: 700 }}>
-              {isFreeShipping ? 'FREE' : `₹${shippingFee.toLocaleString('en-IN')}`}
+            <span>Delivery Fee</span>
+            <span style={{ color: 'var(--success)', fontWeight: 700 }}>
+              FREE
             </span>
           </div>
 
-          <div className="summary-row">
-            <span>Estimated GST (18%)</span>
+          <div className="summary-row" style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+            <span>Includes GST (18%)</span>
             <span>₹{estimatedTax.toLocaleString('en-IN')}</span>
           </div>
 
           <div className="summary-total-row">
             <span>Grand Total</span>
-            <span style={{ color: '#fff' }}>₹{grandTotal.toLocaleString('en-IN')}</span>
+            <span style={{ color: 'var(--primary-light)' }}>₹{grandTotal.toLocaleString('en-IN')}</span>
           </div>
 
           <button
