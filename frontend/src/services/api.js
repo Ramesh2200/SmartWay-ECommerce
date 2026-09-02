@@ -807,7 +807,7 @@ function normalizeOrder(order) {
   const status = (order.status || order.orderStatus || 'CONFIRMED').toUpperCase();
   const rawItems = order.items || [];
 
-  // Collapse duplicate items inside the order
+  // Normalize and deduplicate line items inside the order
   const mergedItemsMap = new Map();
   for (let idx = 0; idx < rawItems.length; idx++) {
     const item = rawItems[idx];
@@ -815,15 +815,11 @@ function normalizeOrder(order) {
     const pId = Number(item.productId || item.id || 1);
     const prodInfo = PRODUCTS_DATA.find((p) => p.id === pId) || {};
     const unitPrice = Number(item.price || item.unitPrice || prodInfo.price || 0);
-    const quantity = Number(item.quantity || 1);
+    const quantity = Math.max(1, Number(item.quantity || 1));
     const productName = item.productName || item.name || prodInfo.name || `Product #${pId}`;
     const productImage = item.productImage || item.image || item.imageUrl || prodInfo.image || prodInfo.images?.[0] || '';
 
-    if (mergedItemsMap.has(pId)) {
-      const existing = mergedItemsMap.get(pId);
-      existing.quantity += quantity;
-      existing.subtotal = existing.quantity * existing.unitPrice;
-    } else {
+    if (!mergedItemsMap.has(pId)) {
       mergedItemsMap.set(pId, {
         id: item.id || idx + 1,
         productId: pId,
