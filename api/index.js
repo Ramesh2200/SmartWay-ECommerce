@@ -127,38 +127,104 @@ module.exports = async function handler(req, res) {
   // Auth: Register
   if (pathname === '/api/auth/register' && req.method === 'POST') {
     const cleanEmail = (body.email || '').toLowerCase().trim();
-    if (USERS.some((u) => u.email.toLowerCase() === cleanEmail)) {
+    const fullName = body.fullName || body.name || cleanEmail.split('@')[0];
+    const password = (body.password || '').trim();
+    const phone = body.phone || body.mobile || '+91 98765 43210';
+
+    try {
+      const existingRows = await db.query('SELECT id, email FROM users WHERE email = ?', [cleanEmail]);
+      if (existingRows && existingRows.length > 0) {
+        return res.status(200).json({
+          success: false,
+          alreadyAuthenticated: true,
+          message: 'This email is already registered. Please sign in to continue.'
+        });
+      }
+
+      const insertResult = await db.query(
+        'INSERT INTO users (full_name, email, password_hash, email_verified, phone, created_at, updated_at) VALUES (?, ?, ?, TRUE, ?, NOW(), NOW())',
+        [fullName, cleanEmail, password, phone]
+      );
+
+      const newUserId = insertResult?.insertId || Date.now();
+      const user = {
+        id: newUserId,
+        userId: newUserId,
+        fullName,
+        email: cleanEmail,
+        phone,
+        role: 'CUSTOMER',
+        createdAt: new Date().toISOString()
+      };
+      USERS.push({ ...user, password });
       return res.status(200).json({
-        success: false,
-        alreadyAuthenticated: true,
-        message: 'This email is already registered. Please sign in to continue.'
+        success: true,
+        message: 'Account registered successfully! Please sign in with your email and password.',
+        data: user
+      });
+    } catch (dbErr) {
+      console.warn('MySQL insert warning (using resilient fallback):', dbErr.message);
+
+      if (USERS.some((u) => u.email.toLowerCase() === cleanEmail)) {
+        return res.status(200).json({
+          success: false,
+          alreadyAuthenticated: true,
+          message: 'This email is already registered. Please sign in to continue.'
+        });
+      }
+
+      const user = {
+        id: Date.now(),
+        userId: Date.now(),
+        fullName,
+        email: cleanEmail,
+        phone,
+        password,
+        role: 'CUSTOMER',
+        createdAt: new Date().toISOString()
+      };
+      USERS.push(user);
+      return res.status(200).json({
+        success: true,
+        message: 'Account registered successfully! Please sign in with your email and password.',
+        data: user
       });
     }
-
-    const user = {
-      id: Date.now(),
-      userId: Date.now(),
-      fullName: body.fullName || body.name || cleanEmail.split('@')[0],
-      email: cleanEmail,
-      phone: body.phone || body.mobile || '+91 98765 43210',
-      password: body.password || '',
-      role: 'CUSTOMER',
-      createdAt: new Date().toISOString()
-    };
-    USERS.push(user);
-    return res.status(200).json({
-      success: true,
-      message: 'Account registered successfully! Please sign in with your email and password.',
-      data: user
-    });
   }
 
   // Auth: Login
   if (pathname === '/api/auth/login' && req.method === 'POST') {
     const cleanEmail = (body.email || '').toLowerCase().trim();
     const password = (body.password || '').trim();
-    const existing = USERS.find((u) => u.email.toLowerCase() === cleanEmail);
 
+    try {
+      const rows = await db.query('SELECT id, full_name, email, password_hash, phone, role FROM users WHERE email = ?', [cleanEmail]);
+      if (rows && rows.length > 0) {
+        const u = rows[0];
+        if (u.password_hash && u.password_hash !== password) {
+          return res.status(400).json({
+            success: false,
+            message: 'Incorrect password. Please verify your credentials and try again.'
+          });
+        }
+        return res.status(200).json({
+          success: true,
+          message: 'Login successful',
+          data: {
+            id: u.id,
+            userId: u.id,
+            fullName: u.full_name,
+            email: u.email,
+            phone: u.phone || '+91 98765 43210',
+            role: u.role || 'CUSTOMER'
+          }
+        });
+      }
+    } catch (dbErr) {
+      console.warn('MySQL login query warning (using resilient fallback):', dbErr.message);
+    }
+
+    const existing = USERS.find((u) => u.email.toLowerCase() === cleanEmail);
     if (!existing) {
       return res.status(400).json({
         success: false,

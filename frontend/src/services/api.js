@@ -148,16 +148,6 @@ export const api = {
 
   sendEmailOtp: async (email, isRegister = false) => {
     const cleanEmail = (email || '').toLowerCase().trim();
-    const users = getStoredUsers();
-    const existing = users.find((u) => u.email.toLowerCase() === cleanEmail);
-
-    if (isRegister && existing) {
-      return {
-        success: false,
-        alreadyAuthenticated: true,
-        message: 'This email is already registered. Please sign in to continue.'
-      };
-    }
 
     try {
       const res = await request('/auth/send-email-otp', {
@@ -170,6 +160,13 @@ export const api = {
       }
     } catch (err) {
       console.warn('Backend sendEmailOtp unreachable, using client OTP fallback:', err.message);
+      if (err.data && (err.data.alreadyAuthenticated || (err.message && err.message.includes('already')))) {
+        return {
+          success: false,
+          alreadyAuthenticated: true,
+          message: 'This email is already registered. Please sign in to continue.'
+        };
+      }
     }
 
     const simulatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
@@ -225,16 +222,6 @@ export const api = {
 
   register: async (userData) => {
     const cleanEmail = (userData.email || '').toLowerCase().trim();
-    const users = getStoredUsers();
-    const existing = users.find((u) => u.email.toLowerCase() === cleanEmail);
-
-    if (existing) {
-      return {
-        success: false,
-        alreadyAuthenticated: true,
-        message: 'This email is already registered. Please sign in to continue.'
-      };
-    }
 
     try {
       const res = await request('/auth/register', {
@@ -242,6 +229,7 @@ export const api = {
         body: JSON.stringify(userData)
       });
       if (res && res.success) {
+        const users = getStoredUsers();
         const newUser = {
           userId: res.data?.userId || res.data?.id || Date.now(),
           fullName: userData.fullName || res.data?.fullName || cleanEmail.split('@')[0],
@@ -258,8 +246,16 @@ export const api = {
       if (res && !res.success) return res;
     } catch (err) {
       console.warn('Backend register unreachable, using client registration:', err.message);
+      if (err.data && (err.data.alreadyAuthenticated || (err.message && err.message.includes('already')))) {
+        return {
+          success: false,
+          alreadyAuthenticated: true,
+          message: 'This email is already registered. Please sign in to continue.'
+        };
+      }
     }
 
+    const users = getStoredUsers();
     const newUser = {
       userId: Date.now(),
       fullName: userData.fullName || cleanEmail.split('@')[0],
