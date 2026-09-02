@@ -1,0 +1,8 @@
+*.zip
+*.tar.gz
+backend/
+target/
+database/
+docs/
+postman/
+.git

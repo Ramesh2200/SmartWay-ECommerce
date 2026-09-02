@@ -16,12 +16,12 @@
   - Interactive quantity selector and customer trust badges (*Fast Delivery*, *7-Day Returns*, *100% Genuine*).
   - Unauthenticated "Buy Now" opens a sign-in modal and preserves target items upon redirect.
 - **Payment & Order Processing**:
-  - Razorpay Payment Gateway integration (\`rzp_test_TSA8hQOJIQaDo0\`) supporting UPI, Cards, NetBanking, and Cash on Delivery (COD).
+  - Razorpay Payment Gateway integration (`rzp_live_TUpDWbsYfpR2m7`) supporting UPI, Cards, NetBanking, and Cash on Delivery (COD).
   - ACID transactional order creation with snapshot isolation for product names, images, unit prices, and automatic stock decrement.
-  - Unique commercial order numbers (\`SW-YYYYMMDD-XXXXXX\`).
+  - Unique commercial order numbers (`SW-YYYYMMDD-XXXXXX`).
 - **Customer Account & Orders Hub**:
-  - Real-time orders retrieved from MySQL (\`GET /api/orders/my-orders\`).
-  - Interactive modal with visual 6-step progress tracker (\`Placed\` $\rightarrow$ \`Confirmed\` $\rightarrow$ \`Processing\` $\rightarrow$ \`Shipped\` $\rightarrow$ \`Out for Delivery\` $\rightarrow$ \`Delivered\`).
+  - Real-time orders retrieved from MySQL (`GET /api/orders/my-orders`).
+  - Interactive modal with visual 6-step progress tracker (`Placed` $\rightarrow$ `Confirmed` $\rightarrow$ `Processing` $\rightarrow$ `Shipped` $\rightarrow$ `Out for Delivery` $\rightarrow$ `Delivered`).
   - Interactive order cancellation with automatic stock replenishment and one-click "Buy Again" reordering.
 - **Email Verification & Security**:
   - 6-digit OTP verification powered by Gmail SMTP (STARTTLS on port 587) with countdown timer and resend rate-limiting.
@@ -86,8 +86,8 @@ GMAIL_USERNAME=your_email@gmail.com
 GMAIL_APP_PASSWORD=your_app_password
 
 # Razorpay Payment Gateway
-RAZORPAY_KEY_ID=rzp_test_TSA8hQOJIQaDo0
-VITE_RAZORPAY_KEY_ID=rzp_test_TSA8hQOJIQaDo0
+RAZORPAY_KEY_ID=rzp_live_TUpDWbsYfpR2m7
+VITE_RAZORPAY_KEY_ID=rzp_live_TUpDWbsYfpR2m7
 
 # Server
 PORT=8080

@@ -20,3 +20,4 @@ Thumbs.db
 *.iml
 .vscode/
 *.log
+.vercel

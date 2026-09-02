@@ -73,6 +73,7 @@ export const CheckoutPage = () => {
   };
 
   const handlePlaceOrder = async () => {
+    if (loading) return;
     setLoading(true);
 
     const fullAddressStr = `${address.fullName}, Ph: ${address.phone}, ${address.street}, ${address.city}, ${address.state} - ${address.pincode}`;

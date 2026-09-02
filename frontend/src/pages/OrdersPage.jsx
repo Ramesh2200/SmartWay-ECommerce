@@ -19,7 +19,8 @@ import {
   Download,
   FileText,
   MapPin,
-  CreditCard
+  CreditCard,
+  Trash2
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
@@ -54,7 +55,16 @@ export const OrdersPage = () => {
       const uid = user.userId || user.id || user.email;
       const res = await api.getMyOrders(uid);
       if (res && res.success && Array.isArray(res.data)) {
-        setOrders(res.data);
+        const seen = new Set();
+        const unique = [];
+        for (const o of res.data) {
+          const k = String(o.orderNumber || o.id || o.orderId);
+          if (!seen.has(k)) {
+            seen.add(k);
+            unique.push(o);
+          }
+        }
+        setOrders(unique);
       } else {
         setOrders([]);
       }
@@ -63,6 +73,20 @@ export const OrdersPage = () => {
       setError('Unable to load your orders. Please try again.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDeleteOrder = async (orderId) => {
+    if (!window.confirm('Are you sure you want to remove this order from history?')) return;
+    try {
+      await api.deleteOrder(orderId);
+      showToast('Order removed from list', 'info');
+      fetchOrders();
+      if (selectedOrder && (selectedOrder.id === orderId || selectedOrder.orderId === orderId)) {
+        setSelectedOrder(null);
+      }
+    } catch (err) {
+      showToast('Could not remove order', 'error');
     }
   };
 
@@ -457,6 +481,15 @@ export const OrdersPage = () => {
                         style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem' }}
                       >
                         <Eye size={14} /> View Details & Tracking
+                      </button>
+
+                      <button
+                        onClick={() => handleDeleteOrder(orderKey)}
+                        className="btn btn-secondary btn-sm"
+                        style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.82rem', color: '#94A3B8', padding: '0.35rem 0.6rem' }}
+                        title="Remove order from history"
+                      >
+                        <Trash2 size={13} />
                       </button>
                     </div>
                   </div>

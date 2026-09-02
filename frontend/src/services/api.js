@@ -29,20 +29,44 @@ function saveStoredUsers(users) {
   }
 }
 
-// Helper: Get stored orders
+// Helper: Get stored orders (strictly deduplicated)
 function getStoredOrders() {
   try {
     const raw = localStorage.getItem(ORDERS_STORAGE_KEY);
-    return raw ? JSON.parse(raw) : [];
+    const list = raw ? JSON.parse(raw) : [];
+    if (!Array.isArray(list)) return [];
+
+    const seenIds = new Set();
+    const unique = [];
+    for (const ord of list) {
+      if (!ord) continue;
+      const key = String(ord.orderNumber || ord.id || ord.orderId);
+      if (!seenIds.has(key)) {
+        seenIds.add(key);
+        unique.push(ord);
+      }
+    }
+    return unique;
   } catch {
     return [];
   }
 }
 
-// Helper: Save stored orders
+// Helper: Save stored orders (strictly deduplicated)
 function saveStoredOrders(orders) {
   try {
-    localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(orders));
+    if (!Array.isArray(orders)) return;
+    const seenIds = new Set();
+    const unique = [];
+    for (const ord of orders) {
+      if (!ord) continue;
+      const key = String(ord.orderNumber || ord.id || ord.orderId);
+      if (!seenIds.has(key)) {
+        seenIds.add(key);
+        unique.push(ord);
+      }
+    }
+    localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(unique));
   } catch (e) {
     console.error('Failed to save orders to local storage', e);
   }
@@ -575,8 +599,17 @@ export const api = {
       items: enrichedItems
     };
 
-    orders.unshift(newOrder);
-    saveStoredOrders(orders);
+    // Avoid duplicate insertions within short burst
+    const isDuplicate = orders.some(
+      (o) =>
+        (o.paymentId && newOrder.paymentId && o.paymentId === newOrder.paymentId) ||
+        (Date.now() - new Date(o.createdAt || 0).getTime() < 4000 && Number(o.totalAmount) === Number(newOrder.totalAmount) && o.items?.length === newOrder.items?.length)
+    );
+
+    if (!isDuplicate) {
+      orders.unshift(newOrder);
+      saveStoredOrders(orders);
+    }
 
     return {
       success: true,
@@ -592,9 +625,18 @@ export const api = {
     try {
       const res = await request('/orders/my-orders' + (userId ? `?userId=${userId}` : ''));
       if (res && res.success && Array.isArray(res.data) && res.data.length > 0) {
+        const seen = new Set();
+        const unique = [];
+        for (const o of res.data.map(normalizeOrder)) {
+          const k = String(o.orderNumber || o.id || o.orderId);
+          if (!seen.has(k)) {
+            seen.add(k);
+            unique.push(o);
+          }
+        }
         return {
           success: true,
-          data: res.data.map(normalizeOrder)
+          data: unique
         };
       }
     } catch {
@@ -602,9 +644,18 @@ export const api = {
     }
 
     const localOrders = getStoredOrders().map(normalizeOrder);
+    const seen = new Set();
+    const unique = [];
+    for (const o of localOrders) {
+      const k = String(o.orderNumber || o.id || o.orderId);
+      if (!seen.has(k)) {
+        seen.add(k);
+        unique.push(o);
+      }
+    }
     return {
       success: true,
-      data: localOrders
+      data: unique
     };
   },
 
@@ -673,6 +724,18 @@ export const api = {
       return { success: true, message: 'Order cancelled successfully', data: normalizeOrder(target) };
     }
     return { success: false, message: 'Could not find order to cancel' };
+  },
+
+  deleteOrder: async (orderId) => {
+    const orders = getStoredOrders();
+    const updated = orders.filter((o) => String(o.id) !== String(orderId) && String(o.orderId) !== String(orderId) && String(o.orderNumber) !== String(orderId));
+    saveStoredOrders(updated);
+    return { success: true, message: 'Order removed from history' };
+  },
+
+  clearAllOrders: async () => {
+    localStorage.removeItem(ORDERS_STORAGE_KEY);
+    return { success: true, message: 'All orders cleared' };
   }
 };
 
