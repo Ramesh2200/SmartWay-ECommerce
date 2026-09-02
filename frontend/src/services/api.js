@@ -800,33 +800,51 @@ export const api = {
   }
 };
 
-// Global helper: Normalizes orders ensuring all expected UI fields exist
+// Global helper: Normalizes orders ensuring all expected UI fields exist and line items are merged
 function normalizeOrder(order) {
   if (!order) return order;
   const id = order.id || order.orderId || Date.now();
   const status = (order.status || order.orderStatus || 'CONFIRMED').toUpperCase();
   const rawItems = order.items || [];
-  const items = rawItems.map((item, idx) => {
+
+  // Collapse duplicate items inside the order
+  const mergedItemsMap = new Map();
+  for (let idx = 0; idx < rawItems.length; idx++) {
+    const item = rawItems[idx];
+    if (!item) continue;
     const pId = Number(item.productId || item.id || 1);
     const prodInfo = PRODUCTS_DATA.find((p) => p.id === pId) || {};
-    const unitPrice = Number(item.unitPrice || item.price || prodInfo.price || 0);
+    const unitPrice = Number(item.price || item.unitPrice || prodInfo.price || 0);
     const quantity = Number(item.quantity || 1);
     const productName = item.productName || item.name || prodInfo.name || `Product #${pId}`;
     const productImage = item.productImage || item.image || item.imageUrl || prodInfo.image || prodInfo.images?.[0] || '';
 
-    return {
-      id: item.id || idx + 1,
-      productId: pId,
-      productName,
-      name: productName,
-      productImage,
-      image: productImage,
-      price: unitPrice,
-      unitPrice,
-      quantity,
-      subtotal: Number(item.subtotal || (quantity * unitPrice))
-    };
-  });
+    if (mergedItemsMap.has(pId)) {
+      const existing = mergedItemsMap.get(pId);
+      existing.quantity += quantity;
+      existing.subtotal = existing.quantity * existing.unitPrice;
+    } else {
+      mergedItemsMap.set(pId, {
+        id: item.id || idx + 1,
+        productId: pId,
+        productName,
+        name: productName,
+        productImage,
+        image: productImage,
+        price: unitPrice,
+        unitPrice,
+        quantity,
+        subtotal: Number(quantity * unitPrice)
+      });
+    }
+  }
+
+  const items = Array.from(mergedItemsMap.values());
+  const calculatedSubtotal = items.reduce((sum, it) => sum + (it.unitPrice * it.quantity), 0);
+  const discountAmount = Number(order.discountAmount || 0);
+  const shippingFee = Number(order.shippingFee !== undefined ? order.shippingFee : (calculatedSubtotal >= 999 ? 0 : 99));
+  const taxAmount = Number(order.taxAmount !== undefined ? order.taxAmount : Math.round((calculatedSubtotal - discountAmount) * 0.18));
+  const totalAmount = Number(order.totalAmount || order.grandTotal || (calculatedSubtotal - discountAmount + shippingFee + taxAmount));
 
   return {
     ...order,
@@ -838,8 +856,12 @@ function normalizeOrder(order) {
     orderStatus: status,
     paymentStatus: order.paymentStatus || (order.paymentMethod === 'COD' ? 'PENDING' : 'PAID'),
     paymentMethod: order.paymentMethod || 'RAZORPAY',
-    totalAmount: Number(order.totalAmount || order.grandTotal || 0),
-    grandTotal: Number(order.totalAmount || order.grandTotal || 0),
+    subtotal: calculatedSubtotal,
+    discountAmount,
+    shippingFee,
+    taxAmount,
+    totalAmount,
+    grandTotal: totalAmount,
     shippingAddress: order.shippingAddress || '123 SmartWay Tech Park, Bengaluru, Karnataka 560001',
     items
   };

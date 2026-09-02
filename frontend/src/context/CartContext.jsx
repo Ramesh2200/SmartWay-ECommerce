@@ -28,11 +28,12 @@ export const CartProvider = ({ children }) => {
 
   const addToCart = (product, quantity = 1) => {
     setCart((prev) => {
-      const existing = prev.find((item) => item.id === product.id);
+      const pId = String(product.id || product.productId);
+      const existing = prev.find((item) => String(item.id || item.productId) === pId);
       if (existing) {
         showToast(`Updated "${product.name}" quantity (${existing.quantity + quantity})`, 'success');
         return prev.map((item) =>
-          item.id === product.id ? { ...item, quantity: item.quantity + quantity } : item
+          String(item.id || item.productId) === pId ? { ...item, quantity: item.quantity + quantity } : item
         );
       }
       showToast(`Added "${product.name}" to cart! 🛍️`, 'success');
@@ -41,21 +42,23 @@ export const CartProvider = ({ children }) => {
   };
 
   const updateQuantity = (productId, quantity) => {
+    const pId = String(productId);
     if (quantity <= 0) {
       removeFromCart(productId);
       return;
     }
     setCart((prev) =>
-      prev.map((item) => (item.id === productId ? { ...item, quantity } : item))
+      prev.map((item) => (String(item.id || item.productId) === pId ? { ...item, quantity } : item))
     );
   };
 
   const removeFromCart = (productId) => {
-    const item = cart.find((i) => i.id === productId);
+    const pId = String(productId);
+    const item = cart.find((i) => String(i.id || i.productId) === pId);
     if (item) {
       showToast(`Removed "${item.name}" from cart`, 'info');
     }
-    setCart((prev) => prev.filter((item) => item.id !== productId));
+    setCart((prev) => prev.filter((item) => String(item.id || item.productId) !== pId));
   };
 
   const clearCart = () => {

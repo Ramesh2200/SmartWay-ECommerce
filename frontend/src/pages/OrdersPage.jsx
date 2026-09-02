@@ -250,8 +250,10 @@ export const OrdersPage = () => {
 
           <div class="total-box">
             <div class="total-row"><span>Subtotal:</span> <span>₹${Number(order.subtotal || order.totalAmount).toLocaleString('en-IN')}</span></div>
-            <div class="total-row"><span>Shipping:</span> <span>FREE</span></div>
-            <div class="total-row grand-total"><span>Grand Total:</span> <span>₹${Number(order.totalAmount).toLocaleString('en-IN')}</span></div>
+            <div class="total-row"><span>Shipping:</span> <span>${Number(order.shippingFee || 0) > 0 ? '₹' + Number(order.shippingFee).toLocaleString('en-IN') : 'FREE'}</span></div>
+            ${Number(order.discountAmount || 0) > 0 ? `<div class="total-row" style="color: #10B981;"><span>Discount:</span> <span>-₹${Number(order.discountAmount).toLocaleString('en-IN')}</span></div>` : ''}
+            ${Number(order.taxAmount || 0) > 0 ? `<div class="total-row"><span>GST (18%):</span> <span>₹${Number(order.taxAmount).toLocaleString('en-IN')}</span></div>` : ''}
+            <div class="total-row grand-total"><span>Grand Total:</span> <span>₹${Number(order.totalAmount || order.grandTotal).toLocaleString('en-IN')}</span></div>
           </div>
 
           <div style="clear: both; margin-top: 60px; font-size: 12px; color: #888; text-align: center; border-top: 1px solid #eee; padding-top: 20px;">
