@@ -678,6 +678,7 @@ export const ProductsPage = () => {
                   {/* Dual Price Quick Preset Pills */}
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
                     {[
+                      { label: '₹10 - ₹99 Deals 🔥', min: '10', max: '99' },
                       { label: 'Under ₹500', min: '', max: '500' },
                       { label: '₹500 - ₹5,000', min: '500', max: '5000' },
                       { label: '₹5k - ₹25k', min: '5000', max: '25000' },

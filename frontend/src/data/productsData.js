@@ -2662,5 +2662,81 @@ export const PRODUCTS_DATA = [
     ],
     features: ['High-grade anodized aluminum alloy grooved shell', 'Multiwheel ball-bearing mounted wheel system for effortless gliding', 'Dual TSA-approved lock latches integrated directly into the aluminum frame', 'Height-adjustable Flex Divider adapts to packed items'],
     specifications: { Volume: '36 Liters', Dimensions: '55 x 40 x 23 cm', Weight: '4.3 kg', Origin: 'Germany' }
+  },
+  {
+    id: 102,
+    name: 'SmartWay Ultra-Soft Optical Microfiber Screen Cleaning Cloth',
+    slug: 'smartway-microfiber-screen-cloth',
+    description: 'High-density ultra-fine lint-free microfiber cleaning cloth for smartphones, laptops, lenses, and sunglasses.',
+    category: 'Accessories',
+    subcategory: 'Cleaning Accessories',
+    brand: 'SmartWay',
+    price: 10,
+    originalPrice: 49,
+    discount: 80,
+    discount_percentage: 80,
+    rating: 4.9,
+    reviewCount: 1420,
+    stock: 500,
+    stock_quantity: 500,
+    sku: 'AC-SW-CLOTH-10',
+    image: 'https://images.unsplash.com/photo-1583485088034-697b5bc54ccd?w=700&auto=format&fit=crop&q=85',
+    imageUrl: 'https://images.unsplash.com/photo-1583485088034-697b5bc54ccd?w=700&auto=format&fit=crop&q=85',
+    images: [
+      'https://images.unsplash.com/photo-1583485088034-697b5bc54ccd?w=700&auto=format&fit=crop&q=85',
+      'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=700&auto=format&fit=crop&q=85'
+    ],
+    features: ['High-density lint-free microfiber fabric', 'Safe for all camera lenses, phone screens, and eyeglasses', 'Reusable and washable design', 'Compact pocket size'],
+    specifications: { Material: 'Microfiber', Size: '15 x 15 cm', Washable: 'Yes' }
+  },
+  {
+    id: 103,
+    name: 'Universal Anti-Break Spiral Cable Protector (Pack of 4)',
+    slug: 'universal-spiral-cable-protector-pack',
+    description: 'Flexible silicone spiral protective sleeves to prevent charging cables from bending and fraying.',
+    category: 'Electronics',
+    subcategory: 'Cables & Accessories',
+    brand: 'SmartWay',
+    price: 10,
+    originalPrice: 50,
+    discount: 80,
+    discount_percentage: 80,
+    rating: 4.8,
+    reviewCount: 980,
+    stock: 450,
+    stock_quantity: 450,
+    sku: 'EL-SW-CBL-PROT-10',
+    image: 'https://images.unsplash.com/photo-1544816155-12df9643f363?w=700&auto=format&fit=crop&q=85',
+    imageUrl: 'https://images.unsplash.com/photo-1544816155-12df9643f363?w=700&auto=format&fit=crop&q=85',
+    images: [
+      'https://images.unsplash.com/photo-1544816155-12df9643f363?w=700&auto=format&fit=crop&q=85'
+    ],
+    features: ['Protects iPhone, Type-C, and Micro USB cables', 'Durable high-elasticity silicone', 'Vibrant multi-color set', 'Easy snap-on installation'],
+    specifications: { Quantity: '4 Pieces', Material: 'Silicone', Compatibility: 'Universal' }
+  },
+  {
+    id: 104,
+    name: 'SmartWay Waterproof Travel Luggage Tag with ID Card',
+    slug: 'smartway-waterproof-luggage-tag',
+    description: 'Durable silicone luggage identification tag with privacy flap and stainless steel loop.',
+    category: 'Accessories',
+    subcategory: 'Travel accessories',
+    brand: 'SmartWay',
+    price: 10,
+    originalPrice: 49,
+    discount: 80,
+    discount_percentage: 80,
+    rating: 4.8,
+    reviewCount: 430,
+    stock: 300,
+    stock_quantity: 300,
+    sku: 'AC-SW-LUG-TAG-10',
+    image: 'https://images.unsplash.com/photo-1581553680321-4fffae59fccd?w=700&auto=format&fit=crop&q=85',
+    imageUrl: 'https://images.unsplash.com/photo-1581553680321-4fffae59fccd?w=700&auto=format&fit=crop&q=85',
+    images: [
+      'https://images.unsplash.com/photo-1581553680321-4fffae59fccd?w=700&auto=format&fit=crop&q=85'
+    ],
+    features: ['Waterproof silicone casing', 'Privacy flap conceals personal details', 'Reinforced stainless steel loop', 'Universal luggage fit'],
+    specifications: { Material: 'Silicone & Steel', Color: 'Midnight Black', Size: '9 x 5 cm' }
   }
 ];
