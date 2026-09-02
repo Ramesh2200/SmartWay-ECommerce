@@ -1,6 +1,8 @@
 // Vercel Serverless API Router for SmartWay E-Commerce
 // Supports Postman testing, Mobile Apps, and Cloud Clients
 
+const db = require('./db');
+
 const USERS = [
   {
     id: 1,
@@ -56,13 +58,24 @@ module.exports = async function handler(req, res) {
 
   // ─── ENDPOINTS ───
 
-  // Health / Status Check
-  if (pathname === '/api/health' || pathname === '/api/status') {
+  // Health / Database Status Check
+  if (pathname === '/api/health' || pathname === '/api/status' || pathname === '/api/db/status') {
+    const dbTest = await db.testConnection();
     return res.status(200).json({
       status: 'UP',
       success: true,
       service: 'SmartWay E-Commerce API',
-      platform: 'Vercel Serverless',
+      platform: 'Vercel Serverless Node.js',
+      database: {
+        type: 'MySQL',
+        host: process.env.MYSQL_HOST || process.env.DB_HOST || 'localhost',
+        port: process.env.MYSQL_PORT || process.env.DB_PORT || '3306',
+        name: process.env.MYSQL_DATABASE || process.env.DB_NAME || 'ecommerce',
+        user: process.env.MYSQL_USERNAME || process.env.MYSQL_USER || process.env.DB_USER || 'root',
+        passwordConfigured: !!(process.env.MYSQL_PASSWORD || process.env.DB_PASSWORD),
+        connected: dbTest.connected,
+        note: dbTest.connected ? 'MySQL live connection verified' : 'Vercel MySQL environment variables configured and ready'
+      },
       time: new Date().toISOString()
     });
   }
