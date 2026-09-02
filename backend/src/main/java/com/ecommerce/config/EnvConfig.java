@@ -81,23 +81,35 @@ public class EnvConfig {
 
     // Database Configurations
     public static String getDbHost() {
-        return get("MYSQL_HOST", "localhost");
+        String host = get("MYSQL_HOST");
+        if (host == null || host.isEmpty()) host = get("DB_HOST", "localhost");
+        return host;
     }
 
     public static String getDbPort() {
-        return get("MYSQL_PORT", "3306");
+        String port = get("MYSQL_PORT");
+        if (port == null || port.isEmpty()) port = get("DB_PORT", "3306");
+        return port;
     }
 
     public static String getDbName() {
-        return get("MYSQL_DATABASE", "ecommerce");
+        String name = get("MYSQL_DATABASE");
+        if (name == null || name.isEmpty()) name = get("DB_NAME", "ecommerce");
+        return name;
     }
 
     public static String getDbUser() {
-        return get("MYSQL_USERNAME", "root");
+        String user = get("MYSQL_USERNAME");
+        if (user == null || user.isEmpty()) user = get("MYSQL_USER");
+        if (user == null || user.isEmpty()) user = get("DB_USER", "root");
+        return user;
     }
 
     public static String getDbPassword() {
-        return get("MYSQL_PASSWORD", "");
+        String pass = get("MYSQL_PASSWORD");
+        if (pass == null || pass.isEmpty()) pass = get("DB_PASSWORD");
+        if (pass == null || pass.isEmpty()) pass = "081506";
+        return pass;
     }
 
     // Server Port
