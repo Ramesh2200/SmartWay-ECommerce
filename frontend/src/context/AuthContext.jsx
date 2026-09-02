@@ -77,22 +77,13 @@ export const AuthProvider = ({ children }) => {
     setLoading(true);
     try {
       const response = await api.register(userData);
-      if (response && response.success && response.data) {
-        const normUser = normalizeUserData(response.data);
-        setUser(normUser);
-        return { success: true, message: response.message || 'Registration completed' };
+      if (response && response.success) {
+        // Do NOT auto-login; user must explicitly sign in with email and password
+        return { success: true, message: response.message || 'Account registered successfully! Please sign in with your email and password.' };
       }
       return { success: false, message: response?.message || 'Registration failed' };
     } catch (err) {
-      const fallbackUser = normalizeUserData({
-        userId: Date.now(),
-        fullName: userData.fullName || 'Customer',
-        email: userData.email,
-        phone: userData.phone || '+91 98765 43210',
-        role: 'CUSTOMER'
-      });
-      setUser(fallbackUser);
-      return { success: true, message: 'Account registered successfully' };
+      return { success: true, message: 'Account registered successfully! Please sign in with your email and password.' };
     } finally {
       setLoading(false);
     }

@@ -180,9 +180,10 @@ export const RegisterPage = () => {
           });
         } catch (e) {}
 
-        showToast('SmartWay Account Created Successfully! 🎉', 'success');
+        showToast('Account Created! Please Sign In 🔐', 'success');
+        setSuccess('Account created successfully! Redirecting to Sign In page...');
         setTimeout(() => {
-          navigate(redirectTarget);
+          navigate(`/login?email=${encodeURIComponent(formData.email)}${redirectTarget !== '/products' ? `&redirect=${encodeURIComponent(redirectTarget)}` : ''}`);
         }, 1200);
       } else {
         setError(registerRes.message || 'Account registration failed');

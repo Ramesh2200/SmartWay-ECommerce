@@ -12,8 +12,9 @@ export const LoginPage = () => {
 
   const queryParams = new URLSearchParams(location.search);
   const redirectTarget = queryParams.get('redirect') || '/products';
+  const initialEmail = queryParams.get('email') || '';
 
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(initialEmail);
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
