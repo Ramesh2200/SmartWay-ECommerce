@@ -52,8 +52,8 @@ export const OrdersPage = () => {
     setLoading(true);
     setError('');
     try {
-      const uid = user.userId || user.id || user.email;
-      const res = await api.getMyOrders(uid);
+      const uid = user.userId || user.id;
+      const res = await api.getMyOrders(uid, user.email);
       if (res && res.success && Array.isArray(res.data)) {
         const seen = new Set();
         const unique = [];

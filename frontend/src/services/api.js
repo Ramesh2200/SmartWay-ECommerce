@@ -577,6 +577,17 @@ export const api = {
       };
     });
 
+    // Resolve active user identifier and email
+    let uid = orderData.userId;
+    let uemail = (orderData.userEmail || '').toLowerCase().trim();
+    if (!uid || !uemail) {
+      try {
+        const saved = JSON.parse(localStorage.getItem('ecom_user') || '{}');
+        if (!uid) uid = saved.userId || saved.id || Date.now();
+        if (!uemail) uemail = (saved.email || '').toLowerCase().trim();
+      } catch {}
+    }
+
     const newOrder = {
       id: orderId,
       orderId: orderId,
@@ -594,8 +605,11 @@ export const api = {
       shippingFee: Number(orderData.shippingFee || 0),
       taxAmount: Number(orderData.taxAmount || 0),
       shippingAddress: orderData.shippingAddress || '123 SmartWay Tech Park, Bengaluru, Karnataka 560001',
-      userId: orderData.userId || 1,
-      userEmail: orderData.userEmail || '',
+      userId: uid,
+      customerId: uid,
+      userEmail: uemail,
+      customerEmail: uemail,
+      customerName: orderData.customerName || orderData.fullName || '',
       items: enrichedItems
     };
 
@@ -603,7 +617,7 @@ export const api = {
     const isDuplicate = orders.some(
       (o) =>
         (o.paymentId && newOrder.paymentId && o.paymentId === newOrder.paymentId) ||
-        (Date.now() - new Date(o.createdAt || 0).getTime() < 4000 && Number(o.totalAmount) === Number(newOrder.totalAmount) && o.items?.length === newOrder.items?.length)
+        (Date.now() - new Date(o.createdAt || 0).getTime() < 4000 && Number(o.totalAmount) === Number(newOrder.totalAmount) && o.items?.length === newOrder.items?.length && String(o.userId) === String(newOrder.userId))
     );
 
     if (!isDuplicate) {
@@ -621,10 +635,23 @@ export const api = {
     };
   },
 
-  getMyOrders: async (userId) => {
+  getMyOrders: async (userId, userEmail) => {
+    // Determine active user ID and email
+    let currentUserId = userId;
+    let currentUserEmail = (userEmail || '').toLowerCase().trim();
+
+    if (!currentUserId && !currentUserEmail) {
+      try {
+        const saved = JSON.parse(localStorage.getItem('ecom_user') || '{}');
+        currentUserId = saved.userId || saved.id;
+        currentUserEmail = (saved.email || '').toLowerCase().trim();
+      } catch {}
+    }
+
     try {
-      const res = await request('/orders/my-orders' + (userId ? `?userId=${userId}` : ''));
-      if (res && res.success && Array.isArray(res.data) && res.data.length > 0) {
+      const q = currentUserId ? `?userId=${currentUserId}` : (currentUserEmail ? `?email=${encodeURIComponent(currentUserEmail)}` : '');
+      const res = await request(`/orders/my-orders${q}`);
+      if (res && res.success && Array.isArray(res.data)) {
         const seen = new Set();
         const unique = [];
         for (const o of res.data.map(normalizeOrder)) {
@@ -644,9 +671,18 @@ export const api = {
     }
 
     const localOrders = getStoredOrders().map(normalizeOrder);
+    
+    // Strict isolation: only return orders belonging to the logged-in user
+    const userOrders = localOrders.filter((o) => {
+      if (!currentUserId && !currentUserEmail) return false;
+      const matchId = currentUserId && (String(o.userId) === String(currentUserId) || String(o.customerId) === String(currentUserId));
+      const matchEmail = currentUserEmail && o.userEmail && (String(o.userEmail).toLowerCase().trim() === currentUserEmail);
+      return matchId || matchEmail;
+    });
+
     const seen = new Set();
     const unique = [];
-    for (const o of localOrders) {
+    for (const o of userOrders) {
       const k = String(o.orderNumber || o.id || o.orderId);
       if (!seen.has(k)) {
         seen.add(k);

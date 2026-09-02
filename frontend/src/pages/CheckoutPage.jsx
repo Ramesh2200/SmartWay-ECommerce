@@ -95,8 +95,9 @@ export const CheckoutPage = () => {
     if (paymentMethod === 'COD') {
       try {
         const orderData = {
-          userId: user?.userId || user?.id || 1,
-          userEmail: user?.email || '',
+          userId: user?.userId || user?.id || Date.now(),
+          userEmail: (user?.email || '').toLowerCase().trim(),
+          customerName: user?.fullName || address.fullName || 'Customer',
           totalAmount: grandTotal,
           subtotal: subtotal,
           discountAmount: discountAmount,
@@ -143,8 +144,9 @@ export const CheckoutPage = () => {
         handler: async function (response) {
           try {
             const orderData = {
-              userId: user?.userId || user?.id || 1,
-              userEmail: user?.email || '',
+              userId: user?.userId || user?.id || Date.now(),
+              userEmail: (user?.email || '').toLowerCase().trim(),
+              customerName: user?.fullName || address.fullName || 'Customer',
               totalAmount: grandTotal,
               subtotal: subtotal,
               discountAmount: discountAmount,

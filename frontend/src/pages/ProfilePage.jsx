@@ -152,7 +152,7 @@ export const ProfilePage = () => {
       const fetchOrders = async () => {
         setLoadingOrders(true);
         try {
-          const res = await api.getMyOrders(user.userId || user.id);
+          const res = await api.getMyOrders(user.userId || user.id, user.email);
           if (res && res.success && Array.isArray(res.data)) {
             setOrders(res.data);
           }
