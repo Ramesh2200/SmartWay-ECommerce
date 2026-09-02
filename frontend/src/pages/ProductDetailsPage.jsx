@@ -33,7 +33,7 @@ export const ProductDetailsPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
-  const { addToCart } = useCart();
+  const { addToCart, buyNow } = useCart();
   const { isInWishlist, toggleWishlist } = useWishlist();
   const { showToast } = useToast();
 
@@ -46,37 +46,44 @@ export const ProductDetailsPage = () => {
   const [loginModalOpen, setLoginModalOpen] = useState(false);
 
   useEffect(() => {
-    window.scrollTo(0, 0);
-    const fetchDetails = async () => {
+    const loadData = async () => {
       setLoading(true);
       try {
         const [prodRes, allRes] = await Promise.all([
           api.getProductById(id),
-          api.getProducts()
+          api.getProducts({ limit: 120 })
         ]);
-        if (prodRes.success && prodRes.data) {
+
+        if (prodRes && prodRes.success && prodRes.data) {
           setProduct(prodRes.data);
-          setSelectedImage(prodRes.data.image || prodRes.data.imageUrl || '');
+          setSelectedImage(prodRes.data.image || prodRes.data.imageUrl);
+        } else {
+          setProduct(null);
         }
-        if (allRes.success && allRes.data) {
+
+        if (allRes && allRes.success && Array.isArray(allRes.data)) {
           setAllProducts(allRes.data);
         }
       } catch (err) {
-        console.error('Error fetching product details:', err);
+        console.error('Failed to load product details:', err);
       } finally {
         setLoading(false);
       }
     };
-    fetchDetails();
+    loadData();
+    window.scrollTo(0, 0);
   }, [id]);
 
-  if (loading) return <DetailsSkeleton />;
+  if (loading) {
+    return <DetailsSkeleton />;
+  }
+
   if (!product) {
     return (
-      <div className="container" style={{ padding: '5rem 0', textAlign: 'center' }}>
-        <h2 style={{ fontSize: '2rem', color: '#fff', marginBottom: '1rem' }}>Product Not Found</h2>
-        <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>
-          The product you are looking for may have been updated or moved.
+      <div className="container" style={{ padding: '6rem 0', textAlign: 'center' }}>
+        <h2 style={{ fontSize: '2rem', marginBottom: '1rem', color: '#fff' }}>Product Not Found</h2>
+        <p style={{ color: 'var(--text-muted)', marginBottom: '2rem' }}>
+          The item you are looking for does not exist or has been removed.
         </p>
         <Link to="/products" className="btn btn-primary btn-lg">
           Explore Product Catalog <ArrowRight size={18} />
@@ -97,11 +104,10 @@ export const ProductDetailsPage = () => {
 
   const handleAddToCart = () => {
     addToCart(product, quantity);
-    showToast(`✓ Added ${quantity}x "${product.name}" to your cart!`, 'success');
   };
 
   const handleBuyNow = () => {
-    addToCart(product, quantity);
+    buyNow(product, quantity);
     if (isAuthenticated) {
       navigate('/checkout');
     } else {

@@ -61,6 +61,11 @@ export const CartProvider = ({ children }) => {
     setCart((prev) => prev.filter((item) => String(item.id || item.productId) !== pId));
   };
 
+  const buyNow = (product, quantity = 1) => {
+    const pId = product.id || product.productId;
+    setCart([{ ...product, id: pId, quantity }]);
+  };
+
   const clearCart = () => {
     setCart([]);
     setAppliedPromo(null);
@@ -112,6 +117,7 @@ export const CartProvider = ({ children }) => {
       value={{
         cart,
         addToCart,
+        buyNow,
         updateQuantity,
         removeFromCart,
         clearCart,
