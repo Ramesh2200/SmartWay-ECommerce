@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useParams, useLocation } from 'react-router-dom';
 import {
   Package,
   Clock,
@@ -14,7 +14,12 @@ import {
   RotateCcw,
   Sparkles,
   ShieldCheck,
-  ChevronRight
+  ChevronRight,
+  Printer,
+  Download,
+  FileText,
+  MapPin,
+  CreditCard
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
@@ -29,6 +34,8 @@ export const OrdersPage = () => {
   const { addToCart } = useCart();
   const { showToast } = useToast();
   const navigate = useNavigate();
+  const params = useParams();
+  const location = useLocation();
 
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -44,7 +51,8 @@ export const OrdersPage = () => {
     setLoading(true);
     setError('');
     try {
-      const res = await api.getMyOrders(user.id);
+      const uid = user.userId || user.id || user.email;
+      const res = await api.getMyOrders(uid);
       if (res && res.success && Array.isArray(res.data)) {
         setOrders(res.data);
       } else {
@@ -52,7 +60,7 @@ export const OrdersPage = () => {
       }
     } catch (err) {
       console.error('Error fetching orders:', err);
-      setError('Unable to load your orders from database. Please try again.');
+      setError('Unable to load your orders. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -67,18 +75,36 @@ export const OrdersPage = () => {
     fetchOrders();
   }, [user, isAuthenticated]);
 
+  // Open target order modal if specified in URL params or search query
+  useEffect(() => {
+    const queryParams = new URLSearchParams(location.search);
+    const targetId = params.orderId || queryParams.get('id') || queryParams.get('orderId');
+    if (targetId && orders.length > 0) {
+      const matched = orders.find(
+        (o) =>
+          String(o.id) === String(targetId) ||
+          String(o.orderId) === String(targetId) ||
+          String(o.orderNumber) === String(targetId)
+      );
+      if (matched) {
+        setSelectedOrder(matched);
+      }
+    }
+  }, [params, location.search, orders]);
+
   const handleCancelOrder = async (orderId) => {
     if (!window.confirm('Are you sure you want to cancel this order? Stock will be returned to the store.')) {
       return;
     }
     setCancellingId(orderId);
     try {
-      const res = await api.cancelOrder(orderId, user.id);
+      const uid = user?.userId || user?.id;
+      const res = await api.cancelOrder(orderId, uid);
       if (res && res.success) {
         showToast('Order cancelled successfully', 'info');
         fetchOrders();
-        if (selectedOrder && selectedOrder.id === orderId) {
-          setSelectedOrder(res.data);
+        if (selectedOrder && (selectedOrder.id === orderId || selectedOrder.orderId === orderId)) {
+          setSelectedOrder(res.data || { ...selectedOrder, status: 'CANCELLED', orderStatus: 'CANCELLED' });
         }
       } else {
         showToast(res.message || 'Could not cancel order', 'error');
@@ -95,17 +121,116 @@ export const OrdersPage = () => {
       order.items.forEach((item) => {
         addToCart(
           {
-            id: item.productId,
-            name: item.productName,
+            id: item.productId || item.id,
+            name: item.productName || item.name,
             price: Number(item.unitPrice || item.price),
-            image: item.productImage
+            image: item.productImage || item.image
           },
           item.quantity || 1
         );
       });
-      showToast(`Added ${order.items.length} items to your cart! 🛒`, 'success');
+      showToast(`Added ${order.items.length} items to your cart! 🛍️`, 'success');
       navigate('/cart');
     }
+  };
+
+  const handlePrintInvoice = (order) => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      showToast('Please allow popups to print invoices', 'warning');
+      return;
+    }
+
+    const itemsHtml = (order.items || [])
+      .map(
+        (item) => `
+        <tr>
+          <td style="padding: 10px; border-bottom: 1px solid #eee;">
+            <strong>${item.productName || item.name}</strong><br/>
+            <small style="color: #666;">Item ID: ${item.productId || item.id}</small>
+          </td>
+          <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: center;">${item.quantity}</td>
+          <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right;">₹${Number(item.unitPrice || item.price).toLocaleString('en-IN')}</td>
+          <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right;">₹${Number(item.subtotal || (item.quantity * Number(item.unitPrice || item.price))).toLocaleString('en-IN')}</td>
+        </tr>
+      `
+      )
+      .join('');
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Invoice - ${order.orderNumber}</title>
+          <style>
+            body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 40px; color: #333; }
+            .header { display: flex; justify-content: space-between; border-bottom: 2px solid #6366F1; padding-bottom: 20px; margin-bottom: 20px; }
+            .logo { font-size: 24px; font-weight: bold; color: #6366F1; }
+            .meta-box { margin-bottom: 30px; }
+            table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+            th { background: #f8f9fa; padding: 10px; text-align: left; font-size: 13px; text-transform: uppercase; border-bottom: 2px solid #ddd; }
+            .total-box { float: right; width: 300px; }
+            .total-row { display: flex; justify-content: space-between; padding: 6px 0; }
+            .grand-total { font-size: 18px; font-weight: bold; color: #6366F1; border-top: 2px solid #333; padding-top: 10px; margin-top: 10px; }
+            @media print { .no-print { display: none; } }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <div>
+              <div class="logo">🛍️ SmartWay E-Commerce</div>
+              <div style="font-size: 12px; color: #666; margin-top: 5px;">GSTIN: 29AABCS1429B1ZB | support@smartway.in</div>
+            </div>
+            <div style="text-align: right;">
+              <h2 style="margin: 0; color: #333;">TAX INVOICE</h2>
+              <div style="font-size: 14px; font-weight: bold; margin-top: 5px;">${order.orderNumber}</div>
+              <div style="font-size: 12px; color: #666;">Date: ${new Date(order.createdAt || Date.now()).toLocaleDateString('en-IN', { dateStyle: 'long' })}</div>
+            </div>
+          </div>
+
+          <div class="meta-box" style="display: flex; justify-content: space-between;">
+            <div>
+              <strong>Billed & Shipped To:</strong><br/>
+              <span style="font-size: 14px; line-height: 1.5;">${order.shippingAddress}</span>
+            </div>
+            <div style="text-align: right;">
+              <strong>Payment Details:</strong><br/>
+              <span>Method: ${order.paymentMethod || 'Razorpay / UPI'}</span><br/>
+              <span>Status: <strong style="color: green;">${order.paymentStatus || 'PAID'}</strong></span>
+            </div>
+          </div>
+
+          <table>
+            <thead>
+              <tr>
+                <th>Item Description</th>
+                <th style="text-align: center;">Qty</th>
+                <th style="text-align: right;">Unit Price</th>
+                <th style="text-align: right;">Amount (INR)</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${itemsHtml}
+            </tbody>
+          </table>
+
+          <div class="total-box">
+            <div class="total-row"><span>Subtotal:</span> <span>₹${Number(order.subtotal || order.totalAmount).toLocaleString('en-IN')}</span></div>
+            <div class="total-row"><span>Shipping:</span> <span>FREE</span></div>
+            <div class="total-row grand-total"><span>Grand Total:</span> <span>₹${Number(order.totalAmount).toLocaleString('en-IN')}</span></div>
+          </div>
+
+          <div style="clear: both; margin-top: 60px; font-size: 12px; color: #888; text-align: center; border-top: 1px solid #eee; padding-top: 20px;">
+            Thank you for shopping with SmartWay! For warranty and support, visit https://ecommerce-gmail-auth.vercel.app/
+          </div>
+
+          <script>
+            window.onload = function() { window.print(); }
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
   };
 
   const getStatusBadge = (status) => {
@@ -131,7 +256,7 @@ export const OrdersPage = () => {
     if (s === 'OUT FOR DELIVERY') return 4;
     if (s === 'SHIPPED') return 3;
     if (s === 'PROCESSING') return 2;
-    if (s === 'CONFIRMED') return 1;
+    if (s === 'CONFIRMED' || s === 'PLACED') return 1;
     return 0;
   };
 
@@ -145,16 +270,21 @@ export const OrdersPage = () => {
             <Sparkles size={14} /> PURCHASE HISTORY
           </span>
           <h1 style={{ fontSize: 'clamp(1.85rem, 3.5vw, 2.5rem)', color: '#fff', fontWeight: 900, margin: 0 }}>
-            My Orders
+            My Orders ({orders.length})
           </h1>
           <p style={{ fontSize: '0.95rem', color: 'var(--text-secondary)', marginTop: '0.35rem' }}>
-            Track active delivery status, manage returns, and reorder past purchases.
+            Track active delivery status, download tax invoices, manage returns, and reorder past purchases.
           </p>
         </div>
 
-        <button onClick={fetchOrders} className="btn btn-secondary btn-sm" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <RefreshCw size={15} /> Refresh Orders
-        </button>
+        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+          <button onClick={fetchOrders} className="btn btn-secondary btn-sm" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <RefreshCw size={15} /> Refresh Orders
+          </button>
+          <Link to="/products" className="btn btn-primary btn-sm" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <ShoppingBag size={15} /> Browse Store
+          </Link>
+        </div>
       </div>
 
       {loading ? (
@@ -174,12 +304,14 @@ export const OrdersPage = () => {
       ) : orders.length > 0 ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.75rem' }}>
           {orders.map((order) => {
-            const badge = getStatusBadge(order.status);
-            const isCancellable = !['CANCELLED', 'DELIVERED', 'SHIPPED'].includes((order.status || '').toUpperCase());
+            const currentStatus = order.status || order.orderStatus || 'CONFIRMED';
+            const badge = getStatusBadge(currentStatus);
+            const isCancellable = !['CANCELLED', 'DELIVERED', 'SHIPPED'].includes(currentStatus.toUpperCase());
+            const orderKey = order.id || order.orderId;
 
             return (
               <div
-                key={order.id}
+                key={orderKey}
                 style={{
                   background: 'rgba(15, 23, 42, 0.75)',
                   backdropFilter: 'blur(16px)',
@@ -202,7 +334,7 @@ export const OrdersPage = () => {
                     gap: '1rem'
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flexWrap: 'wrap' }}>
                     <div>
                       <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.05em' }}>
                         Order Placed
@@ -217,7 +349,7 @@ export const OrdersPage = () => {
                         Total Amount
                       </span>
                       <div style={{ fontSize: '1.05rem', color: 'var(--primary-light)', fontWeight: 900 }}>
-                        ₹{Number(order.totalAmount).toLocaleString('en-IN')}
+                        ₹{Number(order.totalAmount || order.grandTotal || 0).toLocaleString('en-IN')}
                       </div>
                     </div>
 
@@ -226,7 +358,7 @@ export const OrdersPage = () => {
                         Order Number
                       </span>
                       <div style={{ fontSize: '0.92rem', color: '#E2E8F0', fontWeight: 700, fontFamily: 'monospace' }}>
-                        {order.orderNumber || `SW-ORD-${order.id}`}
+                        {order.orderNumber || `SW-ORD-${orderKey}`}
                       </div>
                     </div>
                   </div>
@@ -249,7 +381,7 @@ export const OrdersPage = () => {
                     }}
                   >
                     <badge.icon size={14} />
-                    <span>{order.status || 'CONFIRMED'}</span>
+                    <span>{currentStatus}</span>
                   </div>
                 </div>
 
@@ -261,7 +393,7 @@ export const OrdersPage = () => {
                         <div style={{ width: '70px', height: '70px', borderRadius: 'var(--radius-md)', overflow: 'hidden', background: '#0D1424', border: '1px solid var(--border-subtle)', flexShrink: 0 }}>
                           <ProductImage
                             src={item.productImage || item.image || item.imageUrl}
-                            alt={item.productName || 'Product item'}
+                            alt={item.productName || item.name || 'Product item'}
                             category="Electronics"
                             objectFit="contain"
                           />
@@ -269,16 +401,16 @@ export const OrdersPage = () => {
 
                         <div style={{ flex: 1, minWidth: '220px' }}>
                           <h4 style={{ fontSize: '1.05rem', color: '#fff', fontWeight: 800, margin: '0 0 0.35rem' }}>
-                            {item.productName || `Product #${item.productId}`}
+                            {item.productName || item.name || `Product #${item.productId || item.id}`}
                           </h4>
                           <span style={{ color: 'var(--text-secondary)', fontSize: '0.88rem' }}>
-                            Qty: <strong style={{ color: '#fff' }}>{item.quantity}</strong> • Unit Price: <strong style={{ color: 'var(--primary-light)' }}>₹{Number(item.unitPrice || item.price).toLocaleString('en-IN')}</strong>
+                            Qty: <strong style={{ color: '#fff' }}>{item.quantity || 1}</strong> • Unit Price: <strong style={{ color: 'var(--primary-light)' }}>₹{Number(item.unitPrice || item.price || 0).toLocaleString('en-IN')}</strong>
                           </span>
                         </div>
 
                         <div style={{ textAlign: 'right', minWidth: '120px' }}>
                           <div style={{ fontSize: '1.15rem', color: '#fff', fontWeight: 900 }}>
-                            ₹{Number(item.subtotal || (item.quantity * Number(item.unitPrice || item.price))).toLocaleString('en-IN')}
+                            ₹{Number(item.subtotal || ((item.quantity || 1) * Number(item.unitPrice || item.price || 0))).toLocaleString('en-IN')}
                           </div>
                         </div>
                       </div>
@@ -292,14 +424,22 @@ export const OrdersPage = () => {
                     </div>
 
                     <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+                      <button
+                        onClick={() => handlePrintInvoice(order)}
+                        className="btn btn-secondary btn-sm"
+                        style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem' }}
+                      >
+                        <FileText size={14} /> Invoice
+                      </button>
+
                       {isCancellable && (
                         <button
-                          onClick={() => handleCancelOrder(order.id)}
-                          disabled={cancellingId === order.id}
+                          onClick={() => handleCancelOrder(orderKey)}
+                          disabled={cancellingId === orderKey}
                           className="btn btn-secondary btn-sm"
                           style={{ color: '#FCA5A5', borderColor: 'rgba(239,68,68,0.3)', fontSize: '0.85rem' }}
                         >
-                          {cancellingId === order.id ? 'Cancelling...' : 'Cancel Order'}
+                          {cancellingId === orderKey ? 'Cancelling...' : 'Cancel Order'}
                         </button>
                       )}
 
@@ -316,7 +456,7 @@ export const OrdersPage = () => {
                         className="btn btn-primary btn-sm"
                         style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem' }}
                       >
-                        <Eye size={14} /> View Details & Timeline
+                        <Eye size={14} /> View Details & Tracking
                       </button>
                     </div>
                   </div>
@@ -329,7 +469,7 @@ export const OrdersPage = () => {
         <EmptyState
           icon={Package}
           title="No Orders Placed Yet"
-          subtitle="You haven't placed an order yet. Browse our catalog and enjoy doorstep express delivery!"
+          subtitle="You haven't placed an order yet. Browse our catalog and enjoy express doorstep delivery across India!"
           actionText="Start Shopping"
           actionLink="/products"
         />
@@ -351,32 +491,42 @@ export const OrdersPage = () => {
               <X size={20} />
             </button>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
-              <Package size={24} color="var(--primary-light)" />
-              <div>
-                <h3 style={{ fontSize: '1.4rem', color: '#fff', fontWeight: 800, margin: 0 }}>
-                  Order Details
-                </h3>
-                <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>
-                  {selectedOrder.orderNumber || `SW-ORD-${selectedOrder.id}`}
-                </span>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <Package size={24} color="var(--primary-light)" />
+                <div>
+                  <h3 style={{ fontSize: '1.4rem', color: '#fff', fontWeight: 800, margin: 0 }}>
+                    Order Details
+                  </h3>
+                  <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>
+                    {selectedOrder.orderNumber || `SW-ORD-${selectedOrder.id || selectedOrder.orderId}`}
+                  </span>
+                </div>
               </div>
+
+              <button
+                onClick={() => handlePrintInvoice(selectedOrder)}
+                className="btn btn-secondary btn-sm"
+                style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem' }}
+              >
+                <Printer size={14} /> Print Invoice
+              </button>
             </div>
 
             {/* Visual Tracking Timeline */}
             <div style={{ margin: '1.5rem 0 2rem', padding: '1.5rem', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-lg)' }}>
               <div style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '1.25rem' }}>
-                Delivery Progress
+                Delivery Progress Tracker
               </div>
 
-              {selectedOrder.status === 'CANCELLED' ? (
+              {(selectedOrder.status || selectedOrder.orderStatus) === 'CANCELLED' ? (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--danger)', fontWeight: 700 }}>
                   <X size={18} /> This order was cancelled.
                 </div>
               ) : (
                 <div style={{ display: 'flex', justifyContent: 'space-between', position: 'relative' }}>
                   {timelineSteps.map((stepName, i) => {
-                    const currentIndex = getStepIndex(selectedOrder.status);
+                    const currentIndex = getStepIndex(selectedOrder.status || selectedOrder.orderStatus);
                     const isCompleted = i <= currentIndex;
                     const isCurrent = i === currentIndex;
 
@@ -417,15 +567,15 @@ export const OrdersPage = () => {
                 <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem', background: 'rgba(255,255,255,0.03)', borderRadius: 'var(--radius-md)' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                     <div style={{ width: '45px', height: '45px', borderRadius: 'var(--radius-sm)', overflow: 'hidden', background: '#0D1424' }}>
-                      <ProductImage src={item.productImage || item.image || item.imageUrl} alt={item.productName} objectFit="contain" />
+                      <ProductImage src={item.productImage || item.image || item.imageUrl} alt={item.productName || item.name} objectFit="contain" />
                     </div>
                     <div>
-                      <div style={{ color: '#fff', fontWeight: 700, fontSize: '0.92rem' }}>{item.productName}</div>
-                      <div style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>Qty: {item.quantity} × ₹{Number(item.unitPrice || item.price).toLocaleString('en-IN')}</div>
+                      <div style={{ color: '#fff', fontWeight: 700, fontSize: '0.92rem' }}>{item.productName || item.name}</div>
+                      <div style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>Qty: {item.quantity || 1} × ₹{Number(item.unitPrice || item.price || 0).toLocaleString('en-IN')}</div>
                     </div>
                   </div>
                   <div style={{ fontWeight: 800, color: '#fff' }}>
-                    ₹{Number(item.subtotal || (item.quantity * Number(item.unitPrice || item.price))).toLocaleString('en-IN')}
+                    ₹{Number(item.subtotal || ((item.quantity || 1) * Number(item.unitPrice || item.price || 0))).toLocaleString('en-IN')}
                   </div>
                 </div>
               ))}
@@ -436,7 +586,7 @@ export const OrdersPage = () => {
               <div>
                 <span style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Delivery Address</span>
                 <p style={{ color: '#CBD5E1', marginTop: '0.25rem', lineHeight: 1.5, margin: 0 }}>
-                  {selectedOrder.shippingAddress}
+                  {selectedOrder.shippingAddress || '123 SmartWay Tech Park, Bengaluru, Karnataka 560001'}
                 </p>
               </div>
 

@@ -22,7 +22,7 @@ import { api } from '../services/api';
 import confetti from 'canvas-confetti';
 import { ProductImage } from '../components/ProductImage';
 
-const RAZORPAY_KEY = import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_TSA8hQOJIQaDo0';
+const RAZORPAY_KEY = import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_live_TUpDWbsYfpR2m7';
 
 export const CheckoutPage = () => {
   const navigate = useNavigate();
@@ -77,29 +77,44 @@ export const CheckoutPage = () => {
 
     const fullAddressStr = `${address.fullName}, Ph: ${address.phone}, ${address.street}, ${address.city}, ${address.state} - ${address.pincode}`;
 
+    const enrichedCartItems = cart.map((item) => ({
+      productId: item.id,
+      productName: item.name,
+      name: item.name,
+      productImage: item.image || item.imageUrl,
+      image: item.image || item.imageUrl,
+      category: item.category || 'General',
+      quantity: item.quantity,
+      price: Number(item.price),
+      unitPrice: Number(item.price),
+      subtotal: Number(item.price) * Number(item.quantity)
+    }));
+
     // 1. CASH ON DELIVERY OPTION
     if (paymentMethod === 'COD') {
       try {
         const orderData = {
-          userId: user?.id || 1,
+          userId: user?.userId || user?.id || 1,
+          userEmail: user?.email || '',
           totalAmount: grandTotal,
+          subtotal: subtotal,
+          discountAmount: discountAmount,
+          shippingFee: shippingFee,
+          taxAmount: estimatedTax,
           shippingAddress: fullAddressStr,
           paymentMethod: 'COD',
-          items: cart.map((item) => ({
-            productId: item.id,
-            quantity: item.quantity,
-            price: item.price
-          }))
+          items: enrichedCartItems
         };
 
         const res = await api.createOrder(orderData);
-        if (res.success && res.data) {
+        if (res && res.success) {
+          const placedId = res.orderId || res.id || res.data?.id || res.data?.orderId;
           confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
           clearCart();
           showToast('Order placed successfully (Cash on Delivery)! 🎉', 'success');
-          navigate(`/order-success/${res.data.id || Math.floor(100000 + Math.random() * 900000)}`);
+          navigate(`/order-success/${placedId}`);
         } else {
-          showToast(res.message || 'Failed to place order', 'error');
+          showToast(res?.message || 'Failed to place order', 'error');
         }
       } catch (err) {
         showToast(err.message || 'Order placement failed', 'error');
@@ -127,23 +142,25 @@ export const CheckoutPage = () => {
         handler: async function (response) {
           try {
             const orderData = {
-              userId: user?.id || 1,
+              userId: user?.userId || user?.id || 1,
+              userEmail: user?.email || '',
               totalAmount: grandTotal,
+              subtotal: subtotal,
+              discountAmount: discountAmount,
+              shippingFee: shippingFee,
+              taxAmount: estimatedTax,
               shippingAddress: fullAddressStr,
               paymentMethod: 'RAZORPAY',
               paymentId: response.razorpay_payment_id,
-              items: cart.map((item) => ({
-                productId: item.id,
-                quantity: item.quantity,
-                price: item.price
-              }))
+              items: enrichedCartItems
             };
 
             const res = await api.createOrder(orderData);
+            const placedId = res.orderId || res.id || res.data?.id || res.data?.orderId;
             confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
             clearCart();
             showToast('Payment Successful! Order placed 🎉', 'success');
-            navigate(`/order-success/${res.data?.id || Math.floor(100000 + Math.random() * 900000)}`);
+            navigate(`/order-success/${placedId}`);
           } catch (e) {
             showToast('Order creation error: ' + e.message, 'error');
           } finally {
@@ -177,6 +194,7 @@ export const CheckoutPage = () => {
       showToast('Razorpay Gateway error: ' + err.message, 'error');
     }
   };
+
 
   return (
     <div className="container" style={{ paddingBottom: '4rem' }}>

@@ -16,7 +16,9 @@ import {
   ArrowRight,
   ChevronDown,
   Tag,
-  Layers
+  Layers,
+  PhoneCall,
+  ChevronRight
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
@@ -35,9 +37,11 @@ export const Header = () => {
   const [suggestionsOpen, setSuggestionsOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
 
   const searchContainerRef = useRef(null);
+  const mobileSearchRef = useRef(null);
   const userDropdownRef = useRef(null);
 
   useEffect(() => {
@@ -47,6 +51,26 @@ export const Header = () => {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  // Close mobile menu and dropdowns when navigating to a new page
+  useEffect(() => {
+    setMobileMenuOpen(false);
+    setMobileSearchOpen(false);
+    setSuggestionsOpen(false);
+    setUserDropdownOpen(false);
+  }, [location.pathname, location.search]);
+
+  // Prevent background scroll when mobile drawer is open
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [mobileMenuOpen]);
 
   // Close dropdowns on outside click
   useEffect(() => {
@@ -67,14 +91,14 @@ export const Header = () => {
     const q = searchQuery.toLowerCase().trim();
     if (!q || q.length < 2) return { products: [], brands: [], categories: [] };
 
-    const matchedProducts = PRODUCTS_DATA.filter(p =>
+    const matchedProducts = PRODUCTS_DATA.filter((p) =>
       p.name.toLowerCase().includes(q)
     ).slice(0, 4);
 
-    const allBrands = Array.from(new Set(PRODUCTS_DATA.map(p => p.brand).filter(Boolean)));
-    const matchedBrands = allBrands.filter(b => b.toLowerCase().includes(q)).slice(0, 3);
+    const allBrands = Array.from(new Set(PRODUCTS_DATA.map((p) => p.brand).filter(Boolean)));
+    const matchedBrands = allBrands.filter((b) => b.toLowerCase().includes(q)).slice(0, 3);
 
-    const matchedCategories = CATEGORIES_DATA.filter(c =>
+    const matchedCategories = CATEGORIES_DATA.filter((c) =>
       c.name.toLowerCase().includes(q)
     ).slice(0, 3);
 
@@ -85,14 +109,17 @@ export const Header = () => {
     };
   }, [searchQuery]);
 
-  const hasSuggestions = suggestions.products.length > 0 || suggestions.brands.length > 0 || suggestions.categories.length > 0;
+  const hasSuggestions =
+    suggestions.products.length > 0 ||
+    suggestions.brands.length > 0 ||
+    suggestions.categories.length > 0;
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
     if (searchQuery.trim()) {
       setSuggestionsOpen(false);
+      setMobileSearchOpen(false);
       navigate(`/products?search=${encodeURIComponent(searchQuery.trim())}`);
-      setMobileMenuOpen(false);
     }
   };
 
@@ -108,26 +135,34 @@ export const Header = () => {
 
   return (
     <header className={`header-wrapper ${isScrolled ? 'scrolled' : ''}`}>
-      <div className="container">
-        <div className="header-top" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1.5rem', padding: '1rem 0' }}>
-          
+      <div className="container header-container">
+        <div className="header-top">
+          {/* MOBILE HAMBURGER BUTTON */}
+          <button
+            onClick={() => setMobileMenuOpen(true)}
+            className="mobile-menu-btn"
+            aria-label="Open navigation menu"
+          >
+            <Menu size={22} />
+          </button>
+
           {/* BRAND LOGO */}
-          <Link to="/" className="brand-logo" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.75rem', flexShrink: 0 }}>
+          <Link to="/" className="brand-logo">
             <div className="brand-icon-box">
-              <ShoppingBag size={24} />
+              <ShoppingBag size={22} />
             </div>
             <div className="brand-text">
-              <span className="brand-title" style={{ fontSize: '1.45rem', fontWeight: 900, letterSpacing: '-0.03em', color: '#fff' }}>
-                Smart<span style={{ color: 'var(--primary-light)' }}>Way</span>
+              <span className="brand-title">
+                Smart<span className="brand-highlight">Way</span>
               </span>
-              <span className="brand-subtitle" style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700 }}>
+              <span className="brand-subtitle desktop-only">
                 <ShieldCheck size={12} color="var(--success)" /> Official Store
               </span>
             </div>
           </Link>
 
           {/* DESKTOP SEARCH BAR WITH REAL-TIME AUTOCOMPLETE */}
-          <div ref={searchContainerRef} style={{ position: 'relative', flex: 1, maxWidth: '580px' }} className="desktop-only">
+          <div ref={searchContainerRef} className="desktop-search-container desktop-only">
             <form onSubmit={handleSearchSubmit} className="header-search">
               <div className="search-input-wrap">
                 <Search size={18} className="search-icon-inside" />
@@ -141,14 +176,15 @@ export const Header = () => {
                     setSuggestionsOpen(true);
                   }}
                   className="header-search-input"
-                  style={{ width: '100%', height: '46px', background: 'rgba(255, 255, 255, 0.05)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-full)', color: '#fff', padding: '0 2.8rem' }}
                 />
                 {searchQuery && (
                   <button
                     type="button"
-                    onClick={() => { setSearchQuery(''); setSuggestionsOpen(false); }}
+                    onClick={() => {
+                      setSearchQuery('');
+                      setSuggestionsOpen(false);
+                    }}
                     className="search-clear-btn"
-                    style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
                     aria-label="Clear search"
                   >
                     <X size={16} />
@@ -159,54 +195,32 @@ export const Header = () => {
 
             {/* SUGGESTIONS DROPDOWN POPUP */}
             {suggestionsOpen && hasSuggestions && (
-              <div
-                style={{
-                  position: 'absolute',
-                  top: '115%',
-                  left: 0,
-                  right: 0,
-                  background: 'rgba(15, 23, 42, 0.95)',
-                  backdropFilter: 'blur(20px)',
-                  WebkitBackdropFilter: 'blur(20px)',
-                  border: '1px solid var(--border-subtle)',
-                  borderRadius: 'var(--radius-xl)',
-                  boxShadow: '0 20px 40px -10px rgba(0, 0, 0, 0.7)',
-                  padding: '1rem',
-                  zIndex: 1000,
-                  animation: 'fadeIn 0.2s ease-out'
-                }}
-              >
+              <div className="search-suggestions-dropdown">
                 {/* 1. PRODUCTS */}
                 {suggestions.products.length > 0 && (
-                  <div style={{ marginBottom: '0.85rem' }}>
-                    <div style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.4rem', paddingLeft: '0.5rem' }}>
-                      Products
-                    </div>
-                    {suggestions.products.map(p => (
+                  <div className="suggestion-section">
+                    <div className="suggestion-section-title">Products</div>
+                    {suggestions.products.map((p) => (
                       <div
                         key={p.id}
                         onClick={() => {
                           setSuggestionsOpen(false);
                           navigate(`/products/${p.id}`);
                         }}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '0.75rem',
-                          padding: '0.5rem 0.65rem',
-                          borderRadius: 'var(--radius-md)',
-                          cursor: 'pointer',
-                          transition: 'background 0.15s ease'
-                        }}
                         className="suggestion-row"
                       >
-                        <img src={p.image || p.imageUrl} alt={p.name} style={{ width: '36px', height: '36px', objectFit: 'contain', background: '#0D1424', borderRadius: 'var(--radius-sm)', padding: '2px' }} />
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ color: '#fff', fontSize: '0.88rem', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                            {p.name}
-                          </div>
-                          <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>
-                            {p.brand} • <strong style={{ color: 'var(--primary-light)' }}>₹{Number(p.price).toLocaleString('en-IN')}</strong>
+                        <img
+                          src={p.image || p.imageUrl}
+                          alt={p.name}
+                          className="suggestion-img"
+                        />
+                        <div className="suggestion-info">
+                          <div className="suggestion-name">{p.name}</div>
+                          <div className="suggestion-meta">
+                            {p.brand} •{' '}
+                            <strong className="suggestion-price">
+                              ₹{Number(p.price).toLocaleString('en-IN')}
+                            </strong>
                           </div>
                         </div>
                       </div>
@@ -216,11 +230,9 @@ export const Header = () => {
 
                 {/* 2. BRANDS */}
                 {suggestions.brands.length > 0 && (
-                  <div style={{ marginBottom: '0.85rem', paddingTop: '0.5rem', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-                    <div style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.4rem', paddingLeft: '0.5rem' }}>
-                      Brands
-                    </div>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
+                  <div className="suggestion-section suggestion-section-border">
+                    <div className="suggestion-section-title">Brands</div>
+                    <div className="suggestion-tags-row">
                       {suggestions.brands.map((b, idx) => (
                         <button
                           key={idx}
@@ -228,18 +240,9 @@ export const Header = () => {
                             setSuggestionsOpen(false);
                             navigate(`/products?brand=${encodeURIComponent(b)}`);
                           }}
-                          style={{
-                            background: 'rgba(99, 102, 241, 0.12)',
-                            border: '1px solid rgba(99, 102, 241, 0.3)',
-                            borderRadius: 'var(--radius-full)',
-                            padding: '0.3rem 0.75rem',
-                            color: '#fff',
-                            fontSize: '0.82rem',
-                            fontWeight: 600,
-                            cursor: 'pointer'
-                          }}
+                          className="suggestion-tag-btn"
                         >
-                          <Tag size={12} style={{ display: 'inline', marginRight: '4px' }} /> {b}
+                          <Tag size={12} /> {b}
                         </button>
                       ))}
                     </div>
@@ -248,11 +251,9 @@ export const Header = () => {
 
                 {/* 3. CATEGORIES */}
                 {suggestions.categories.length > 0 && (
-                  <div style={{ paddingTop: '0.5rem', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-                    <div style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.4rem', paddingLeft: '0.5rem' }}>
-                      Categories
-                    </div>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
+                  <div className="suggestion-section suggestion-section-border">
+                    <div className="suggestion-section-title">Categories</div>
+                    <div className="suggestion-tags-row">
                       {suggestions.categories.map((cat) => (
                         <button
                           key={cat.id}
@@ -260,18 +261,9 @@ export const Header = () => {
                             setSuggestionsOpen(false);
                             navigate(`/products?category=${encodeURIComponent(cat.name)}`);
                           }}
-                          style={{
-                            background: 'rgba(255, 255, 255, 0.05)',
-                            border: '1px solid var(--border-subtle)',
-                            borderRadius: 'var(--radius-full)',
-                            padding: '0.3rem 0.75rem',
-                            color: '#fff',
-                            fontSize: '0.82rem',
-                            fontWeight: 600,
-                            cursor: 'pointer'
-                          }}
+                          className="suggestion-tag-btn suggestion-category-btn"
                         >
-                          <Layers size={12} style={{ display: 'inline', marginRight: '4px' }} /> {cat.name}
+                          <Layers size={12} /> {cat.name}
                         </button>
                       ))}
                     </div>
@@ -281,24 +273,43 @@ export const Header = () => {
             )}
           </div>
 
-          {/* ACTION BUTTONS (Wishlist, Cart, User Auth Profile) */}
-          <div className="header-actions" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            
+          {/* ACTION BUTTONS (Mobile Search, Wishlist, Cart, User Profile) */}
+          <div className="header-actions">
+            {/* Mobile Search Toggle Button */}
+            <button
+              onClick={() => setMobileSearchOpen(!mobileSearchOpen)}
+              className="header-icon-btn mobile-only"
+              title="Search"
+              aria-label="Toggle search bar"
+            >
+              <Search size={20} />
+            </button>
+
             {/* Wishlist Link */}
-            <Link to="/wishlist" className="header-icon-btn" title="Saved Wishlist" style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '42px', height: '42px', borderRadius: 'var(--radius-full)', background: 'rgba(255,255,255,0.05)', color: '#fff', border: '1px solid var(--border-subtle)', textDecoration: 'none' }}>
+            <Link
+              to="/wishlist"
+              className="header-icon-btn"
+              title="Saved Wishlist"
+              aria-label="Wishlist"
+            >
               <Heart size={20} />
               {totalWishlistItems > 0 && (
-                <span className="cart-badge-count" style={{ position: 'absolute', top: '-4px', right: '-4px', background: '#EC4899', color: '#fff', fontSize: '0.72rem', fontWeight: 800, width: '20px', height: '20px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <span className="cart-badge-count wishlist-count">
                   {totalWishlistItems}
                 </span>
               )}
             </Link>
 
             {/* Cart Link */}
-            <Link to="/cart" className="header-icon-btn" title="Shopping Cart" style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '42px', height: '42px', borderRadius: 'var(--radius-full)', background: 'rgba(255,255,255,0.05)', color: '#fff', border: '1px solid var(--border-subtle)', textDecoration: 'none' }}>
+            <Link
+              to="/cart"
+              className="header-icon-btn"
+              title="Shopping Cart"
+              aria-label="Cart"
+            >
               <ShoppingCart size={20} />
               {totalItems > 0 && (
-                <span className="cart-badge-count" style={{ position: 'absolute', top: '-4px', right: '-4px', background: 'var(--primary)', color: '#fff', fontSize: '0.72rem', fontWeight: 800, width: '20px', height: '20px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <span className="cart-badge-count">
                   {totalItems}
                 </span>
               )}
@@ -306,56 +317,30 @@ export const Header = () => {
 
             {/* User Profile / Auth State */}
             {isAuthenticated ? (
-              <div ref={userDropdownRef} style={{ position: 'relative' }}>
+              <div ref={userDropdownRef} className="user-dropdown-wrapper">
                 <button
                   onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem',
-                    background: 'rgba(99, 102, 241, 0.15)',
-                    border: '1px solid rgba(99, 102, 241, 0.35)',
-                    borderRadius: 'var(--radius-full)',
-                    padding: '0.35rem 0.85rem',
-                    color: '#fff',
-                    fontWeight: 700,
-                    fontSize: '0.88rem',
-                    cursor: 'pointer'
-                  }}
+                  className="user-profile-btn"
+                  aria-label="User profile menu"
                 >
-                  <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: '0.85rem' }}>
+                  <div className="user-avatar-badge">
                     {(user?.fullName || user?.email || 'U')[0].toUpperCase()}
                   </div>
-                  <span className="desktop-only">{user?.fullName?.split(' ')[0] || 'My Account'}</span>
-                  <ChevronDown size={14} />
+                  <span className="desktop-only user-display-name">
+                    {user?.fullName?.split(' ')[0] || 'My Account'}
+                  </span>
+                  <ChevronDown size={14} className="desktop-only" />
                 </button>
 
                 {userDropdownOpen && (
-                  <div
-                    style={{
-                      position: 'absolute',
-                      top: '120%',
-                      right: 0,
-                      width: '220px',
-                      background: 'rgba(15, 23, 42, 0.95)',
-                      backdropFilter: 'blur(20px)',
-                      border: '1px solid var(--border-subtle)',
-                      borderRadius: 'var(--radius-lg)',
-                      boxShadow: '0 20px 40px -10px rgba(0, 0, 0, 0.6)',
-                      padding: '0.5rem',
-                      zIndex: 1000
-                    }}
-                  >
-                    <div style={{ padding: '0.65rem 0.75rem', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                      <div style={{ fontWeight: 800, color: '#fff', fontSize: '0.9rem' }}>{user?.fullName || 'Customer'}</div>
-                      <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        {user?.email}
-                      </div>
+                  <div className="user-dropdown-menu">
+                    <div className="user-dropdown-header">
+                      <div className="user-dropdown-name">{user?.fullName || 'Customer'}</div>
+                      <div className="user-dropdown-email">{user?.email}</div>
                     </div>
                     <Link
                       to="/profile"
                       onClick={() => setUserDropdownOpen(false)}
-                      style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', padding: '0.6rem 0.75rem', color: '#E2E8F0', fontSize: '0.88rem', textDecoration: 'none', borderRadius: 'var(--radius-sm)' }}
                       className="user-dropdown-item"
                     >
                       <User size={16} /> Personal Profile
@@ -363,15 +348,17 @@ export const Header = () => {
                     <Link
                       to="/profile?tab=orders"
                       onClick={() => setUserDropdownOpen(false)}
-                      style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', padding: '0.6rem 0.75rem', color: '#E2E8F0', fontSize: '0.88rem', textDecoration: 'none', borderRadius: 'var(--radius-sm)' }}
                       className="user-dropdown-item"
                     >
                       <Package size={16} /> My Orders
                     </Link>
                     <button
-                      onClick={() => { setUserDropdownOpen(false); logout(); navigate('/'); }}
-                      style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '0.6rem', padding: '0.6rem 0.75rem', color: '#FCA5A5', background: 'none', border: 'none', fontSize: '0.88rem', cursor: 'pointer', textAlign: 'left', borderRadius: 'var(--radius-sm)' }}
-                      className="user-dropdown-item"
+                      onClick={() => {
+                        setUserDropdownOpen(false);
+                        logout();
+                        navigate('/');
+                      }}
+                      className="user-dropdown-item logout-item"
                     >
                       <LogOut size={16} /> Sign Out
                     </button>
@@ -379,47 +366,49 @@ export const Header = () => {
                 )}
               </div>
             ) : (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                <Link to="/login" className="btn btn-secondary btn-sm" style={{ padding: '0.45rem 1rem', fontSize: '0.88rem', fontWeight: 700 }}>
+              <div className="header-auth-buttons">
+                <Link to="/login" className="btn btn-secondary btn-sm auth-btn-signin">
                   Sign In
                 </Link>
-                <Link to="/register" className="btn btn-primary btn-sm desktop-only" style={{ padding: '0.45rem 1rem', fontSize: '0.88rem', fontWeight: 700 }}>
-                  Create Account
+                <Link to="/register" className="btn btn-primary btn-sm desktop-only">
+                  Register
                 </Link>
               </div>
             )}
-
-            {/* Mobile Menu Toggle */}
-            <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="btn btn-secondary btn-sm mobile-only"
-              style={{ padding: '0.45rem', display: 'none' }}
-              aria-label="Toggle menu"
-            >
-              {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
-            </button>
           </div>
         </div>
 
-        {/* BOTTOM NAVIGATION CATEGORY LINKS */}
-        <nav className="header-nav desktop-only" style={{ display: 'flex', alignItems: 'center', gap: '1.75rem', padding: '0.65rem 0', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+        {/* MOBILE SEARCH EXPANDABLE BAR */}
+        {mobileSearchOpen && (
+          <div ref={mobileSearchRef} className="mobile-search-bar animate-fade-in mobile-only">
+            <form onSubmit={handleSearchSubmit} className="mobile-search-form">
+              <Search size={18} className="search-icon-inside" />
+              <input
+                type="text"
+                placeholder="Search products, brands..."
+                value={searchQuery}
+                autoFocus
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="mobile-search-input"
+              />
+              <button type="submit" className="mobile-search-submit">
+                <ArrowRight size={18} />
+              </button>
+            </form>
+          </div>
+        )}
+
+        {/* BOTTOM NAVIGATION CATEGORY LINKS (DESKTOP) */}
+        <nav className="header-nav desktop-only" aria-label="Desktop Categories">
           {navCategories.map((item, index) => {
             const isActive = location.pathname + location.search === item.path;
             return (
               <Link
                 key={index}
                 to={item.path}
-                className={`nav-link-item ${isActive ? 'active' : ''} ${item.isHot ? 'hot-deal-link' : ''}`}
-                style={{
-                  color: item.isHot ? '#F59E0B' : (isActive ? 'var(--primary-light)' : '#E2E8F0'),
-                  fontSize: '0.92rem',
-                  fontWeight: 700,
-                  textDecoration: 'none',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.4rem',
-                  transition: 'color 0.2s ease'
-                }}
+                className={`nav-link-item ${isActive ? 'active' : ''} ${
+                  item.isHot ? 'hot-deal-link' : ''
+                }`}
               >
                 {item.name}
               </Link>
@@ -427,6 +416,175 @@ export const Header = () => {
           })}
         </nav>
       </div>
+
+      {/* MOBILE SLIDE-OVER NAVIGATION DRAWER */}
+      {mobileMenuOpen && (
+        <div className="mobile-drawer-overlay" onClick={() => setMobileMenuOpen(false)}>
+          <div
+            className="mobile-drawer-sidebar"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Drawer Header */}
+            <div className="drawer-header">
+              <div className="drawer-brand">
+                <div className="brand-icon-box">
+                  <ShoppingBag size={20} />
+                </div>
+                <div>
+                  <div className="brand-title" style={{ fontSize: '1.25rem' }}>
+                    Smart<span className="brand-highlight">Way</span>
+                  </div>
+                  <div className="brand-subtitle">
+                    <ShieldCheck size={11} color="var(--success)" /> Verified Marketplace
+                  </div>
+                </div>
+              </div>
+              <button
+                onClick={() => setMobileMenuOpen(false)}
+                className="drawer-close-btn"
+                aria-label="Close menu"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Drawer Search */}
+            <div className="drawer-search-wrap">
+              <form onSubmit={handleSearchSubmit} className="mobile-search-form">
+                <Search size={16} className="search-icon-inside" />
+                <input
+                  type="text"
+                  placeholder="Search 1,000+ items..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="mobile-search-input"
+                />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery('')}
+                    className="search-clear-btn"
+                  >
+                    <X size={14} />
+                  </button>
+                )}
+              </form>
+            </div>
+
+            {/* Drawer Auth & Account Box */}
+            <div className="drawer-auth-box">
+              {isAuthenticated ? (
+                <div className="drawer-user-info">
+                  <div className="drawer-avatar">
+                    {(user?.fullName || user?.email || 'U')[0].toUpperCase()}
+                  </div>
+                  <div className="drawer-user-details">
+                    <div className="drawer-user-name">{user?.fullName || 'Customer'}</div>
+                    <div className="drawer-user-email">{user?.email}</div>
+                  </div>
+                </div>
+              ) : (
+                <div className="drawer-guest-box">
+                  <p className="drawer-guest-text">Sign in for personalized recommendations & faster checkout</p>
+                  <div className="drawer-guest-btns">
+                    <Link
+                      to="/login"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="btn btn-primary btn-sm"
+                      style={{ flex: 1 }}
+                    >
+                      Sign In
+                    </Link>
+                    <Link
+                      to="/register"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="btn btn-secondary btn-sm"
+                      style={{ flex: 1 }}
+                    >
+                      Register
+                    </Link>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Drawer Categories & Navigation Links */}
+            <div className="drawer-links-section">
+              <div className="drawer-section-title">Shop by Category</div>
+              <div className="drawer-links-list">
+                {navCategories.map((cat, idx) => (
+                  <Link
+                    key={idx}
+                    to={cat.path}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`drawer-link-item ${cat.isHot ? 'drawer-hot-link' : ''}`}
+                  >
+                    <span>{cat.name}</span>
+                    <ChevronRight size={16} className="drawer-chevron" />
+                  </Link>
+                ))}
+              </div>
+
+              {/* Quick Links */}
+              <div className="drawer-section-title" style={{ marginTop: '1.25rem' }}>
+                Account & Help
+              </div>
+              <div className="drawer-links-list">
+                <Link
+                  to="/orders"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="drawer-link-item"
+                >
+                  <Package size={18} />
+                  <span>My Orders</span>
+                </Link>
+                <Link
+                  to="/wishlist"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="drawer-link-item"
+                >
+                  <Heart size={18} />
+                  <span>Wishlist ({totalWishlistItems})</span>
+                </Link>
+                <Link
+                  to="/cart"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="drawer-link-item"
+                >
+                  <ShoppingCart size={18} />
+                  <span>Cart ({totalItems})</span>
+                </Link>
+                {isAuthenticated && (
+                  <Link
+                    to="/profile"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="drawer-link-item"
+                  >
+                    <User size={18} />
+                    <span>Account Settings</span>
+                  </Link>
+                )}
+              </div>
+            </div>
+
+            {/* Drawer Footer */}
+            {isAuthenticated && (
+              <div className="drawer-footer">
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    logout();
+                    navigate('/');
+                  }}
+                  className="drawer-logout-btn"
+                >
+                  <LogOut size={16} /> Sign Out
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </header>
   );
 };

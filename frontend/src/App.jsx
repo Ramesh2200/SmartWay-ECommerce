@@ -6,6 +6,7 @@ import { CartProvider } from './context/CartContext';
 import { WishlistProvider } from './context/WishlistContext';
 import { Header } from './components/Header';
 import { Footer } from './components/Footer';
+import { MobileBottomNav } from './components/MobileBottomNav';
 
 // Pages
 import { HomePage } from './pages/HomePage';
@@ -53,6 +54,7 @@ function App() {
                 </Routes>
               </main>
               <Footer />
+              <MobileBottomNav />
             </WishlistProvider>
           </CartProvider>
         </AuthProvider>

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { CheckCircle2, Package, ArrowRight, Home, Truck, ShieldCheck, Sparkles, Clock } from 'lucide-react';
+import { CheckCircle2, Package, ArrowRight, Home, Truck, ShieldCheck, Sparkles, Clock, Printer, ShoppingBag } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { api } from '../services/api';
 import { ProductImage } from '../components/ProductImage';
@@ -37,13 +37,17 @@ export const OrderConfirmationPage = () => {
     fetchOrderDetails();
   }, [orderId]);
 
+  const handlePrint = () => {
+    window.print();
+  };
+
   return (
-    <div className="container" style={{ padding: '3.5rem 1rem', maxWidth: '720px', textAlign: 'center' }}>
+    <div className="container" style={{ padding: '3rem 1rem', maxWidth: '780px', textAlign: 'center' }}>
       <div
         className="auth-card"
         style={{
           maxWidth: '100%',
-          padding: '3.5rem 2.5rem',
+          padding: '3rem 2.5rem',
           background: 'rgba(15, 23, 42, 0.85)',
           backdropFilter: 'blur(20px)',
           border: '1px solid var(--border-subtle)',
@@ -78,7 +82,7 @@ export const OrderConfirmationPage = () => {
           Order Placed Successfully! 🎉
         </h1>
         <p style={{ color: 'var(--text-secondary)', fontSize: '0.98rem', lineHeight: 1.6, marginBottom: '2rem' }}>
-          Thank you for shopping with SmartWay. Your order has been registered and is being prepared for express delivery.
+          Thank you for shopping with SmartWay. Your order has been recorded and is now listed in your purchase history.
         </p>
 
         {/* Order Meta Box */}
@@ -89,7 +93,7 @@ export const OrderConfirmationPage = () => {
             borderRadius: 'var(--radius-xl)',
             padding: '1.75rem',
             textAlign: 'left',
-            marginBottom: '2rem'
+            marginBottom: '1.75rem'
           }}
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.85rem', fontSize: '0.92rem' }}>
@@ -107,13 +111,19 @@ export const OrderConfirmationPage = () => {
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.85rem', fontSize: '0.92rem' }}>
             <span style={{ color: 'var(--text-muted)' }}>Order Status:</span>
             <strong style={{ color: 'var(--success)' }}>
-              ● {order?.status || 'CONFIRMED'} (Ready for Packing)
+              ● {order?.status || order?.orderStatus || 'CONFIRMED'} (Ready for Packing)
             </strong>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.85rem', fontSize: '0.92rem' }}>
             <span style={{ color: 'var(--text-muted)' }}>Payment Method:</span>
             <strong style={{ color: '#fff' }}>
               {order?.paymentMethod || 'Razorpay / UPI'}
+            </strong>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.85rem', fontSize: '0.92rem' }}>
+            <span style={{ color: 'var(--text-muted)' }}>Total Amount Paid:</span>
+            <strong style={{ color: 'var(--primary-light)', fontSize: '1.05rem', fontWeight: 900 }}>
+              ₹{Number(order?.totalAmount || order?.grandTotal || 0).toLocaleString('en-IN')}
             </strong>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.92rem', paddingTop: '0.85rem', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
@@ -124,12 +134,47 @@ export const OrderConfirmationPage = () => {
           </div>
         </div>
 
+        {/* Items Summary in Confirmation */}
+        {order?.items && order.items.length > 0 && (
+          <div style={{ textAlign: 'left', marginBottom: '2rem', padding: '1.25rem', background: 'rgba(255,255,255,0.02)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-subtle)' }}>
+            <h4 style={{ color: '#fff', fontSize: '0.95rem', fontWeight: 800, margin: '0 0 1rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Items in this Order ({order.items.length})
+            </h4>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              {order.items.map((item, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <div style={{ width: '40px', height: '40px', borderRadius: 'var(--radius-sm)', overflow: 'hidden', background: '#0D1424', flexShrink: 0 }}>
+                      <ProductImage src={item.productImage || item.image || item.imageUrl} alt={item.productName || item.name} objectFit="contain" />
+                    </div>
+                    <div>
+                      <div style={{ color: '#fff', fontSize: '0.9rem', fontWeight: 700 }}>{item.productName || item.name}</div>
+                      <div style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>Qty: {item.quantity} × ₹{Number(item.unitPrice || item.price || 0).toLocaleString('en-IN')}</div>
+                    </div>
+                  </div>
+                  <div style={{ color: '#fff', fontWeight: 800, fontSize: '0.95rem' }}>
+                    ₹{Number(item.subtotal || ((item.quantity || 1) * Number(item.unitPrice || item.price || 0))).toLocaleString('en-IN')}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* CTA Buttons */}
         <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-          <Link to="/orders" className="btn btn-primary btn-lg" style={{ flex: 1, minWidth: '180px', height: '50px', fontSize: '1rem', fontWeight: 800 }}>
-            <Package size={18} /> View My Orders
+          <Link
+            to={`/orders?id=${order?.id || order?.orderId || orderId}`}
+            className="btn btn-primary btn-lg"
+            style={{ flex: 1, minWidth: '180px', height: '50px', fontSize: '1rem', fontWeight: 800 }}
+          >
+            <Package size={18} /> View in My Orders
           </Link>
-          <Link to="/products" className="btn btn-secondary btn-lg" style={{ flex: 1, minWidth: '180px', height: '50px', fontSize: '1rem', fontWeight: 800 }}>
+          <Link
+            to="/products"
+            className="btn btn-secondary btn-lg"
+            style={{ flex: 1, minWidth: '180px', height: '50px', fontSize: '1rem', fontWeight: 800 }}
+          >
             <Home size={18} /> Continue Shopping
           </Link>
         </div>
