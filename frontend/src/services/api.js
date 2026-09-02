@@ -146,35 +146,52 @@ async function request(endpoint, options = {}) {
 export const api = {
   // ─── 1. Authentication & OTP APIs (With Smart Mobile/Cloud Fallback) ───
 
-  sendEmailOtp: async (email) => {
-    try {
-      return await request('/auth/send-email-otp', {
-        method: 'POST',
-        body: JSON.stringify({ email })
-      });
-    } catch (err) {
-      console.warn('Backend sendEmailOtp unreachable, using client OTP fallback:', err.message);
-      const simulatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
-      try {
-        const otps = JSON.parse(localStorage.getItem(OTPS_STORAGE_KEY) || '{}');
-        otps[email.toLowerCase().trim()] = {
-          otp: simulatedOtp,
-          expiresAt: Date.now() + 5 * 60 * 1000
-        };
-        localStorage.setItem(OTPS_STORAGE_KEY, JSON.stringify(otps));
-      } catch (e) {
-        console.error(e);
-      }
+  sendEmailOtp: async (email, isRegister = false) => {
+    const cleanEmail = (email || '').toLowerCase().trim();
+    const users = getStoredUsers();
+    const existing = users.find((u) => u.email.toLowerCase() === cleanEmail);
+
+    if (isRegister && existing) {
       return {
-        success: true,
-        message: `Verification code generated: ${simulatedOtp}`,
-        simulatedOtp
+        success: false,
+        alreadyAuthenticated: true,
+        message: 'This email is already registered. Please sign in to continue.'
       };
     }
+
+    try {
+      const res = await request('/auth/send-email-otp', {
+        method: 'POST',
+        body: JSON.stringify({ email: cleanEmail, isRegister })
+      });
+      if (res && res.success) return res;
+      if (res && !res.success && (res.alreadyAuthenticated || (res.message && res.message.includes('already')))) {
+        return res;
+      }
+    } catch (err) {
+      console.warn('Backend sendEmailOtp unreachable, using client OTP fallback:', err.message);
+    }
+
+    const simulatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
+    try {
+      const otps = JSON.parse(localStorage.getItem(OTPS_STORAGE_KEY) || '{}');
+      otps[cleanEmail] = {
+        otp: simulatedOtp,
+        expiresAt: Date.now() + 5 * 60 * 1000
+      };
+      localStorage.setItem(OTPS_STORAGE_KEY, JSON.stringify(otps));
+    } catch (e) {
+      console.error(e);
+    }
+    return {
+      success: true,
+      message: `Verification code generated: ${simulatedOtp}`,
+      simulatedOtp
+    };
   },
 
-  sendOtp: async (email) => {
-    return api.sendEmailOtp(email);
+  sendOtp: async (email, isRegister = false) => {
+    return api.sendEmailOtp(email, isRegister);
   },
 
   verifyEmailOtp: async (email, otp) => {
@@ -207,46 +224,65 @@ export const api = {
   },
 
   register: async (userData) => {
+    const cleanEmail = (userData.email || '').toLowerCase().trim();
+    const users = getStoredUsers();
+    const existing = users.find((u) => u.email.toLowerCase() === cleanEmail);
+
+    if (existing) {
+      return {
+        success: false,
+        alreadyAuthenticated: true,
+        message: 'This email is already registered. Please sign in to continue.'
+      };
+    }
+
     try {
       const res = await request('/auth/register', {
         method: 'POST',
         body: JSON.stringify(userData)
       });
-      if (res && res.success) return res;
+      if (res && res.success) {
+        const newUser = {
+          userId: res.data?.userId || res.data?.id || Date.now(),
+          fullName: userData.fullName || res.data?.fullName || cleanEmail.split('@')[0],
+          email: cleanEmail,
+          phone: userData.phone || '+91 98765 43210',
+          password: userData.password || '',
+          role: 'CUSTOMER',
+          createdAt: new Date().toISOString()
+        };
+        users.push(newUser);
+        saveStoredUsers(users);
+        return res;
+      }
+      if (res && !res.success) return res;
     } catch (err) {
       console.warn('Backend register unreachable, using client registration:', err.message);
     }
 
-    // Client-side fallback registration
-    const users = getStoredUsers();
-    const cleanEmail = (userData.email || '').toLowerCase().trim();
-    const existing = users.find((u) => u.email.toLowerCase() === cleanEmail);
-
     const newUser = {
-      userId: existing ? existing.userId : Date.now(),
+      userId: Date.now(),
       fullName: userData.fullName || cleanEmail.split('@')[0],
       email: cleanEmail,
       phone: userData.phone || '+91 98765 43210',
       role: 'CUSTOMER',
-      password: userData.password || 'password123',
+      password: userData.password || '',
       createdAt: new Date().toISOString()
     };
 
-    if (!existing) {
-      users.push(newUser);
-      saveStoredUsers(users);
-    }
+    users.push(newUser);
+    saveStoredUsers(users);
 
     return {
       success: true,
-      message: 'Account registered successfully!',
+      message: 'Account registered successfully! Please sign in with your password.',
       data: newUser
     };
   },
 
   login: async (credentials) => {
     const cleanEmail = (credentials.email || '').toLowerCase().trim();
-    const password = credentials.password || '';
+    const password = (credentials.password || '').trim();
 
     try {
       const res = await request('/auth/login', {
@@ -254,28 +290,27 @@ export const api = {
         body: JSON.stringify({ email: cleanEmail, password })
       });
       if (res && res.success && res.data) return res;
+      if (res && !res.success && res.message) return res;
     } catch (err) {
-      console.warn('Backend login unreachable, activating client fallback:', err.message);
+      console.warn('Backend login unreachable, activating local authentication:', err.message);
     }
 
-    // Client-side fallback authentication
+    // Client-side stored user authentication
     const users = getStoredUsers();
-    let matchedUser = users.find((u) => u.email.toLowerCase() === cleanEmail);
+    const matchedUser = users.find((u) => u.email.toLowerCase() === cleanEmail);
 
     if (!matchedUser) {
-      // Auto-provision demo account so user is never blocked on mobile
-      const namePart = cleanEmail.split('@')[0].replace(/[._]/g, ' ');
-      const formattedName = namePart ? namePart.charAt(0).toUpperCase() + namePart.slice(1) : 'SmartWay User';
-      matchedUser = {
-        userId: Date.now(),
-        fullName: cleanEmail.includes('demo') ? 'Demo Customer' : formattedName,
-        email: cleanEmail,
-        phone: '+91 98765 43210',
-        role: 'CUSTOMER',
-        password: password
+      return {
+        success: false,
+        message: 'No account found with this email. Please create an account first.'
       };
-      users.push(matchedUser);
-      saveStoredUsers(users);
+    }
+
+    if (matchedUser.password && matchedUser.password !== password) {
+      return {
+        success: false,
+        message: 'Incorrect password. Please verify your credentials and try again.'
+      };
     }
 
     return {

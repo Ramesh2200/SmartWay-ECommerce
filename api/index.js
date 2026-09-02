@@ -86,6 +86,15 @@ module.exports = async function handler(req, res) {
     if (!email) {
       return res.status(400).json({ success: false, message: 'Email address is required' });
     }
+
+    if (body.isRegister && USERS.some((u) => u.email.toLowerCase() === email)) {
+      return res.status(200).json({
+        success: false,
+        alreadyAuthenticated: true,
+        message: 'This email is already registered. Please sign in to continue.'
+      });
+    }
+
     const simulatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
     OTP_STORE[email] = simulatedOtp;
 
@@ -118,19 +127,28 @@ module.exports = async function handler(req, res) {
   // Auth: Register
   if (pathname === '/api/auth/register' && req.method === 'POST') {
     const cleanEmail = (body.email || '').toLowerCase().trim();
+    if (USERS.some((u) => u.email.toLowerCase() === cleanEmail)) {
+      return res.status(200).json({
+        success: false,
+        alreadyAuthenticated: true,
+        message: 'This email is already registered. Please sign in to continue.'
+      });
+    }
+
     const user = {
       id: Date.now(),
       userId: Date.now(),
       fullName: body.fullName || body.name || cleanEmail.split('@')[0],
       email: cleanEmail,
       phone: body.phone || body.mobile || '+91 98765 43210',
+      password: body.password || '',
       role: 'CUSTOMER',
       createdAt: new Date().toISOString()
     };
     USERS.push(user);
     return res.status(200).json({
       success: true,
-      message: 'Account registered successfully!',
+      message: 'Account registered successfully! Please sign in with your email and password.',
       data: user
     });
   }
@@ -138,14 +156,23 @@ module.exports = async function handler(req, res) {
   // Auth: Login
   if (pathname === '/api/auth/login' && req.method === 'POST') {
     const cleanEmail = (body.email || '').toLowerCase().trim();
-    const existing = USERS.find((u) => u.email.toLowerCase() === cleanEmail) || {
-      id: Date.now(),
-      userId: Date.now(),
-      fullName: cleanEmail ? (cleanEmail.split('@')[0].charAt(0).toUpperCase() + cleanEmail.split('@')[0].slice(1)) : 'Customer',
-      email: cleanEmail || 'customer@smartway.in',
-      phone: '+91 98765 43210',
-      role: 'CUSTOMER'
-    };
+    const password = (body.password || '').trim();
+    const existing = USERS.find((u) => u.email.toLowerCase() === cleanEmail);
+
+    if (!existing) {
+      return res.status(400).json({
+        success: false,
+        message: 'No account found with this email. Please create an account first.'
+      });
+    }
+
+    if (existing.password && existing.password !== password) {
+      return res.status(400).json({
+        success: false,
+        message: 'Incorrect password. Please verify your credentials and try again.'
+      });
+    }
+
     return res.status(200).json({
       success: true,
       message: 'Login successful',

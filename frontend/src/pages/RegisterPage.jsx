@@ -101,21 +101,21 @@ export const RegisterPage = () => {
 
     setLoading(true);
     try {
-      const response = await api.sendEmailOtp(formData.email);
+      const response = await api.sendEmailOtp(formData.email, true);
       if (response.success) {
         showToast(`Verification code sent to ${formData.email}`, 'info');
         setSuccess(`Verification code dispatched to ${formData.email}. Code is valid for 5 minutes.`);
         setOtpStep(true);
         setTimerSeconds(300);
         setCooldownSeconds(60);
-      } else if (response.alreadyAuthenticated || (response.message && response.message.includes('already authenticated'))) {
+      } else if (response.alreadyAuthenticated || (response.message && response.message.includes('already'))) {
         setAlreadyAuthenticated(true);
         setError('This email is already registered. Please sign in to continue.');
       } else {
         setError(response.message || 'Failed to send verification code to email');
       }
     } catch (err) {
-      if (err.data && err.data.alreadyAuthenticated) {
+      if (err.data && (err.data.alreadyAuthenticated || err.message?.includes('already'))) {
         setAlreadyAuthenticated(true);
         setError('This email is already registered. Please sign in to continue.');
       } else {
@@ -132,7 +132,7 @@ export const RegisterPage = () => {
     setSuccess('');
     setLoading(true);
     try {
-      const response = await api.sendEmailOtp(formData.email);
+      const response = await api.sendEmailOtp(formData.email, true);
       if (response.success) {
         setSuccess(`A fresh verification code has been dispatched to ${formData.email}.`);
         showToast('Fresh verification code sent!', 'info');
