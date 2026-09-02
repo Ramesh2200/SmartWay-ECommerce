@@ -255,41 +255,6 @@ export const LoginPage = () => {
                 </>
               )}
             </button>
-
-            {/* QUICK 1-CLICK DEMO LOGIN BUTTON */}
-            <button
-              type="button"
-              onClick={async () => {
-                setEmail('demo@smartway.com');
-                setPassword('password123');
-                setLoading(true);
-                setError('');
-                try {
-                  const res = await login('demo@smartway.com', 'password123');
-                  if (res.success) {
-                    showToast('Welcome to SmartWay E-Commerce!', 'success');
-                    navigate(redirectTarget);
-                  }
-                } catch {
-                  showToast('Welcome to SmartWay E-Commerce!', 'success');
-                  navigate(redirectTarget);
-                } finally {
-                  setLoading(false);
-                }
-              }}
-              className="btn btn-secondary"
-              style={{
-                width: '100%',
-                height: '42px',
-                fontSize: '0.88rem',
-                fontWeight: 700,
-                background: 'rgba(99, 102, 241, 0.12)',
-                borderColor: 'rgba(99, 102, 241, 0.35)',
-                color: 'var(--primary-light)'
-              }}
-            >
-              <Sparkles size={16} /> Quick 1-Click Demo Login
-            </button>
           </form>
 
           {/* DIVIDER */}

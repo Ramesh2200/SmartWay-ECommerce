@@ -55,8 +55,8 @@ export const AuthProvider = ({ children }) => {
       return { success: false, message: response?.message || 'Invalid email or password' };
     } catch (err) {
       // Guaranteed fallback so user is never blocked on mobile
-      const cleanEmail = (email || 'demo@smartway.com').toLowerCase().trim();
-      const namePart = cleanEmail.split('@')[0].replace(/[._]/g, ' ');
+      const cleanEmail = (email || '').toLowerCase().trim();
+      const namePart = cleanEmail ? cleanEmail.split('@')[0].replace(/[._]/g, ' ') : 'Customer';
       const formattedName = namePart ? namePart.charAt(0).toUpperCase() + namePart.slice(1) : 'Customer';
 
       const fallbackUser = normalizeUserData({
