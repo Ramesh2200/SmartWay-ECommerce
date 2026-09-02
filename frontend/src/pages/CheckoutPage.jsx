@@ -46,6 +46,7 @@ export const CheckoutPage = () => {
   // Delivery & Payment
   const [deliveryMethod, setDeliveryMethod] = useState('STANDARD');
   const [paymentMethod, setPaymentMethod] = useState('RAZORPAY');
+  const isSubmittingRef = React.useRef(false);
 
   React.useEffect(() => {
     if (!isAuthenticated) {
@@ -73,7 +74,8 @@ export const CheckoutPage = () => {
   };
 
   const handlePlaceOrder = async () => {
-    if (loading) return;
+    if (loading || isSubmittingRef.current) return;
+    isSubmittingRef.current = true;
     setLoading(true);
 
     const fullAddressStr = `${address.fullName}, Ph: ${address.phone}, ${address.street}, ${address.city}, ${address.state} - ${address.pincode}`;

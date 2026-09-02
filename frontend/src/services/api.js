@@ -29,24 +29,47 @@ function saveStoredUsers(users) {
   }
 }
 
+// Intelligent deduplication helper to collapse duplicate orders
+function deduplicateOrdersList(list) {
+  if (!Array.isArray(list)) return [];
+  
+  const result = [];
+  const seenKeys = new Set();
+
+  for (const ord of list) {
+    if (!ord) continue;
+    const key = String(ord.orderNumber || ord.id || ord.orderId);
+    if (seenKeys.has(key)) continue;
+
+    // Check if a near-identical order already exists in result
+    const ordTime = new Date(ord.createdAt || 0).getTime();
+    const isBurstDuplicate = result.some((existing) => {
+      const exTime = new Date(existing.createdAt || 0).getTime();
+      const timeDiff = Math.abs(ordTime - exTime);
+      const sameUser = (ord.userId && existing.userId && String(ord.userId) === String(existing.userId)) ||
+                       (ord.userEmail && existing.userEmail && String(ord.userEmail).toLowerCase().trim() === String(existing.userEmail).toLowerCase().trim());
+      const sameAmount = Math.abs(Number(ord.totalAmount || ord.grandTotal || 0) - Number(existing.totalAmount || existing.grandTotal || 0)) < 0.01;
+      const sameItemCount = (ord.items?.length || 0) === (existing.items?.length || 0);
+
+      // If created within 20 seconds with same user and same amount => duplicate
+      return sameUser && sameAmount && sameItemCount && (timeDiff < 20000);
+    });
+
+    if (!isBurstDuplicate) {
+      seenKeys.add(key);
+      result.push(ord);
+    }
+  }
+
+  return result;
+}
+
 // Helper: Get stored orders (strictly deduplicated)
 function getStoredOrders() {
   try {
     const raw = localStorage.getItem(ORDERS_STORAGE_KEY);
     const list = raw ? JSON.parse(raw) : [];
-    if (!Array.isArray(list)) return [];
-
-    const seenIds = new Set();
-    const unique = [];
-    for (const ord of list) {
-      if (!ord) continue;
-      const key = String(ord.orderNumber || ord.id || ord.orderId);
-      if (!seenIds.has(key)) {
-        seenIds.add(key);
-        unique.push(ord);
-      }
-    }
-    return unique;
+    return deduplicateOrdersList(list);
   } catch {
     return [];
   }
@@ -56,16 +79,7 @@ function getStoredOrders() {
 function saveStoredOrders(orders) {
   try {
     if (!Array.isArray(orders)) return;
-    const seenIds = new Set();
-    const unique = [];
-    for (const ord of orders) {
-      if (!ord) continue;
-      const key = String(ord.orderNumber || ord.id || ord.orderId);
-      if (!seenIds.has(key)) {
-        seenIds.add(key);
-        unique.push(ord);
-      }
-    }
+    const unique = deduplicateOrdersList(orders);
     localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(unique));
   } catch (e) {
     console.error('Failed to save orders to local storage', e);
@@ -613,17 +627,28 @@ export const api = {
       items: enrichedItems
     };
 
-    // Avoid duplicate insertions within short burst
-    const isDuplicate = orders.some(
-      (o) =>
-        (o.paymentId && newOrder.paymentId && o.paymentId === newOrder.paymentId) ||
-        (Date.now() - new Date(o.createdAt || 0).getTime() < 4000 && Number(o.totalAmount) === Number(newOrder.totalAmount) && o.items?.length === newOrder.items?.length && String(o.userId) === String(newOrder.userId))
-    );
+    // Avoid duplicate insertions within 20 seconds
+    const existingOrder = orders.find((o) => {
+      const timeDiff = Math.abs(Date.now() - new Date(o.createdAt || 0).getTime());
+      const sameUser = String(o.userId) === String(newOrder.userId) || (o.userEmail && String(o.userEmail).toLowerCase().trim() === String(newOrder.userEmail).toLowerCase().trim());
+      const sameAmount = Math.abs(Number(o.totalAmount || 0) - Number(newOrder.totalAmount || 0)) < 0.01;
+      const samePayment = o.paymentId && newOrder.paymentId && o.paymentId === newOrder.paymentId;
+      return samePayment || (sameUser && sameAmount && timeDiff < 20000);
+    });
 
-    if (!isDuplicate) {
-      orders.unshift(newOrder);
-      saveStoredOrders(orders);
+    if (existingOrder) {
+      return {
+        success: true,
+        orderId: existingOrder.orderId || existingOrder.id,
+        id: existingOrder.id || existingOrder.orderId,
+        orderNumber: existingOrder.orderNumber,
+        data: existingOrder,
+        message: 'Order placed successfully!'
+      };
     }
+
+    orders.unshift(newOrder);
+    saveStoredOrders(orders);
 
     return {
       success: true,

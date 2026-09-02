@@ -154,7 +154,26 @@ export const ProfilePage = () => {
         try {
           const res = await api.getMyOrders(user.userId || user.id, user.email);
           if (res && res.success && Array.isArray(res.data)) {
-            setOrders(res.data);
+            const unique = [];
+            const seen = new Set();
+            for (const o of res.data) {
+              const k = String(o.orderNumber || o.id || o.orderId);
+              if (seen.has(k)) continue;
+
+              const ordTime = new Date(o.createdAt || 0).getTime();
+              const isBurstDuplicate = unique.some((existing) => {
+                const exTime = new Date(existing.createdAt || 0).getTime();
+                const timeDiff = Math.abs(ordTime - exTime);
+                const sameAmount = Math.abs(Number(o.totalAmount || 0) - Number(existing.totalAmount || 0)) < 0.01;
+                return sameAmount && timeDiff < 20000;
+              });
+
+              if (!isBurstDuplicate) {
+                seen.add(k);
+                unique.push(o);
+              }
+            }
+            setOrders(unique);
           }
         } catch (e) {
           console.warn('Orders query:', e);
