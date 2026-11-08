@@ -1,12 +1,13 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Sparkles, Percent, Zap } from 'lucide-react';
+import cardTechBg from '../assets/banners/card-tech-bg.jpg';
 import { IMAGES } from '../assets/images';
 
 export const PromotionalBanners = () => {
   const banners = [
     {
-      bg: IMAGES.promos.megaSale.bg,
+      bg: cardTechBg || IMAGES.promos.megaSale.bg,
       badge: 'MEGA DEAL • UP TO 40% OFF',
       title: 'Next-Gen Laptops & Pro Displays',
       subtitle: 'Experience extreme performance with Apple M3 & UltraSharp displays.',

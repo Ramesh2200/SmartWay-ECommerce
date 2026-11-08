@@ -9,10 +9,15 @@ import {
   ChevronRight,
   Zap,
   Flame,
-  ShoppingBag
+  ShoppingBag,
+  Truck,
+  Star,
+  Lock
 } from 'lucide-react';
 import heroTech from '../assets/banners/hero-tech.jpg';
 import heroShowcase from '../assets/banners/hero-showcase.jpg';
+import cardLeftBg from '../assets/banners/card-left-bg.jpg';
+import cardTechBg from '../assets/banners/card-tech-bg.jpg';
 import { IMAGES } from '../assets/images';
 
 export const HeroBannerCarousel = () => {
@@ -24,6 +29,7 @@ export const HeroBannerCarousel = () => {
     {
       id: 'tech',
       bg: heroTech,
+      cardBg: cardLeftBg,
       badge: 'AI GENERATED TECH COLLECTION',
       badgeIcon: Sparkles,
       badgeColor: '#38BDF8',
@@ -40,6 +46,7 @@ export const HeroBannerCarousel = () => {
     {
       id: 'showcase',
       bg: heroShowcase,
+      cardBg: cardTechBg,
       badge: 'OFFICIAL SMARTWAY SHOWCASE',
       badgeIcon: Zap,
       badgeColor: '#F43F5E',
@@ -56,6 +63,7 @@ export const HeroBannerCarousel = () => {
     {
       id: 'fashion',
       bg: IMAGES.categories?.Fashion?.banner || IMAGES.heroBanner,
+      cardBg: cardLeftBg,
       badge: 'TRENDING FASHION & LIFESTYLE',
       badgeIcon: Flame,
       badgeColor: '#EC4899',
@@ -170,41 +178,65 @@ export const HeroBannerCarousel = () => {
         {/* Main Content Grid */}
         <div className="container" style={{ position: 'relative', zIndex: 2 }}>
           <div className="hero-grid">
-            <div className="hero-text-content">
-              {/* Badge Pill */}
-              <div
-                className="hero-badge-pill"
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '0.4rem',
-                  borderColor: `${slide.badgeColor}40`,
-                  background: `${slide.badgeColor}15`,
-                  color: slide.badgeColor
-                }}
-              >
-                <BadgeIcon size={16} /> {slide.badge}
-              </div>
+            {/* Left Side Hero Card with Background Image */}
+            <div
+              className="hero-card-left"
+              style={{
+                backgroundImage: `url(${slide.cardBg || cardLeftBg})`
+              }}
+            >
+              {/* Semi-transparent Glass Gradient Overlay */}
+              <div className="hero-card-left-overlay" />
 
-              {/* Title */}
-              <h1 className="hero-title" style={{ transition: 'all 0.3s ease' }}>
-                {slide.titlePrefix}
-                <span className="gradient-text">{slide.titleHighlight}</span>
-              </h1>
+              <div className="hero-card-left-content">
+                {/* Badge Pill */}
+                <div
+                  className="hero-badge-pill"
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.4rem',
+                    borderColor: `${slide.badgeColor}60`,
+                    background: `${slide.badgeColor}20`,
+                    color: slide.badgeColor
+                  }}
+                >
+                  <BadgeIcon size={16} /> {slide.badge}
+                </div>
 
-              {/* Subtitle */}
-              <p className="hero-subtitle">
-                {slide.subtitle}
-              </p>
+                {/* Title */}
+                <h1 className="hero-title" style={{ transition: 'all 0.3s ease' }}>
+                  {slide.titlePrefix}
+                  <span className="gradient-text">{slide.titleHighlight}</span>
+                </h1>
 
-              {/* CTA Buttons */}
-              <div className="hero-cta-group">
-                <Link to={slide.primaryBtnLink} className="btn btn-primary btn-lg">
-                  {slide.primaryBtnText} <ArrowRight size={18} />
-                </Link>
-                <Link to={slide.secondaryBtnLink} className="btn btn-secondary btn-lg">
-                  {slide.secondaryBtnText}
-                </Link>
+                {/* Subtitle */}
+                <p className="hero-subtitle">
+                  {slide.subtitle}
+                </p>
+
+                {/* CTA Buttons */}
+                <div className="hero-cta-group">
+                  <Link to={slide.primaryBtnLink} className="btn btn-primary btn-lg">
+                    {slide.primaryBtnText} <ArrowRight size={18} />
+                  </Link>
+                  <Link to={slide.secondaryBtnLink} className="btn btn-secondary btn-lg">
+                    {slide.secondaryBtnText}
+                  </Link>
+                </div>
+
+                {/* Left Card Bottom Trust Strip */}
+                <div className="hero-card-left-trust-strip">
+                  <span className="hero-trust-item">
+                    <Truck size={14} style={{ color: '#38BDF8' }} /> Express 2-Hour Dispatch
+                  </span>
+                  <span className="hero-trust-item">
+                    <Lock size={14} style={{ color: '#10B981' }} /> 100% Genuine Guaranteed
+                  </span>
+                  <span className="hero-trust-item">
+                    <Star size={14} style={{ color: '#F59E0B' }} fill="#F59E0B" /> 4.9/5 Customer Rating
+                  </span>
+                </div>
               </div>
             </div>
 

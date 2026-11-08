@@ -23,6 +23,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
+import { ThemeToggle } from './ThemeToggle';
 import { PRODUCTS_DATA } from '../data/productsData';
 import { CATEGORIES_DATA } from '../data/categoriesData';
 
@@ -273,8 +274,11 @@ export const Header = () => {
             )}
           </div>
 
-          {/* ACTION BUTTONS (Mobile Search, Wishlist, Cart, User Profile) */}
+          {/* ACTION BUTTONS (Theme Switcher, Mobile Search, Wishlist, Cart, User Profile) */}
           <div className="header-actions">
+            {/* Auto / Dark / White Theme Mode Switcher */}
+            <ThemeToggle />
+
             {/* Mobile Search Toggle Button */}
             <button
               onClick={() => setMobileSearchOpen(!mobileSearchOpen)}
@@ -565,6 +569,12 @@ export const Header = () => {
                   </Link>
                 )}
               </div>
+            </div>
+
+            {/* Mobile Drawer Theme Switcher */}
+            <div style={{ padding: '1rem 1.25rem', borderTop: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Appearance</span>
+              <ThemeToggle showLabel={true} />
             </div>
 
             {/* Drawer Footer */}

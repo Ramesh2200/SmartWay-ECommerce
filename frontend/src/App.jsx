@@ -4,6 +4,7 @@ import { ToastProvider } from './context/ToastContext';
 import { AuthProvider } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
 import { WishlistProvider } from './context/WishlistContext';
+import { ThemeProvider } from './context/ThemeContext';
 import { Header } from './components/Header';
 import { Footer } from './components/Footer';
 import { MobileBottomNav } from './components/MobileBottomNav';
@@ -27,12 +28,13 @@ import { NotFoundPage } from './pages/NotFoundPage';
 function App() {
   return (
     <Router>
-      <ToastProvider>
-        <AuthProvider>
-          <CartProvider>
-            <WishlistProvider>
-              <Header />
-              <main className="app-main">
+      <ThemeProvider>
+        <ToastProvider>
+          <AuthProvider>
+            <CartProvider>
+              <WishlistProvider>
+                <Header />
+                <main className="app-main">
                 <Routes>
                   <Route path="/" element={<HomePage />} />
                   <Route path="/products" element={<ProductsPage />} />
@@ -59,7 +61,8 @@ function App() {
           </CartProvider>
         </AuthProvider>
       </ToastProvider>
-    </Router>
+    </ThemeProvider>
+  </Router>
   );
 }
 

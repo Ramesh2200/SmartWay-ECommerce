@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ShoppingBag, ShoppingCart, ShieldCheck, LogOut, Menu, X, Package, User } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
+import { ThemeToggle } from './ThemeToggle';
 
 export const Navbar = () => {
   const { user, logout, isAuthenticated } = useAuth();
@@ -42,6 +43,9 @@ export const Navbar = () => {
 
         {/* Action Controls */}
         <div className="nav-actions">
+          {/* Theme Mode Toggle */}
+          <ThemeToggle />
+
           {/* Cart Icon */}
           <Link to="/cart" className="cart-btn" aria-label="Shopping Cart">
             <ShoppingCart size={22} />
