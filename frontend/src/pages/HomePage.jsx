@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { api } from '../services/api';
 import { IMAGES } from '../assets/images';
+import { HeroBannerCarousel } from '../components/HeroBannerCarousel';
 import { ProductCard } from '../components/ProductCard';
 import { CategoryCard } from '../components/CategoryCard';
 import { FlashSaleSection } from '../components/FlashSaleSection';
@@ -74,69 +75,8 @@ export const HomePage = () => {
 
   return (
     <div className="home-page-container">
-      {/* 1. HERO SECTION */}
-      <section className="container" style={{ padding: '1rem 1.5rem 0' }}>
-        <div className="hero-section" style={{ backgroundImage: `url(${IMAGES.heroTech})` }}>
-          <div className="hero-overlay-bg" />
-          <div className="container" style={{ position: 'relative', zIndex: 2 }}>
-            <div className="hero-grid">
-              <div className="hero-text-content">
-                <div className="hero-badge-pill">
-                  <Sparkles size={16} /> Discover Something You'll Love
-                </div>
-                <h1 className="hero-title">
-                  Shop the Latest Products at <span className="gradient-text">Amazing Prices</span>
-                </h1>
-                <p className="hero-subtitle">
-                  Explore top-tier laptops, wireless audio, smartphones, and smart wearables with guaranteed authenticity and lightning fast delivery to your doorstep.
-                </p>
-                <div className="hero-cta-group">
-                  <Link to="/products" className="btn btn-primary btn-lg">
-                    Shop Now <ArrowRight size={18} />
-                  </Link>
-                  <Link to="/products?category=Smartphones" className="btn btn-secondary btn-lg">
-                    Explore Categories
-                  </Link>
-                </div>
-              </div>
-
-              {/* Customer Guarantee Card */}
-              <div className="hero-visual-card desktop-only">
-                <div className="hero-sec-card-header">
-                  <div className="hero-sec-icon-wrap">
-                    <ShieldCheck size={30} />
-                  </div>
-                  <div>
-                    <h3 style={{ fontSize: '1.25rem', color: '#fff', marginBottom: '0.2rem' }}>
-                      Shop with Confidence
-                    </h3>
-                    <span style={{ color: 'var(--success)', fontSize: 'var(--text-xs)', fontWeight: 700 }}>
-                      100% Genuine Products Guarantee
-                    </span>
-                  </div>
-                </div>
-
-                <div style={{ background: 'rgba(0,0,0,0.35)', borderRadius: 'var(--radius-md)', padding: '1.25rem', border: '1px solid var(--border-subtle)' }}>
-                  <div className="hero-feature-checklist">
-                    <div className="hero-checklist-item">
-                      <CheckCircle2 size={16} /> Official manufacturer warranty on all items
-                    </div>
-                    <div className="hero-checklist-item">
-                      <CheckCircle2 size={16} /> Fast and insured express shipping
-                    </div>
-                    <div className="hero-checklist-item">
-                      <CheckCircle2 size={16} /> 7-Day hassle-free return & replacement
-                    </div>
-                    <div className="hero-checklist-item">
-                      <CheckCircle2 size={16} /> Secure and encrypted checkout protection
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* 1. HERO SECTION - AI GENERATED BANNERS CAROUSEL */}
+      <HeroBannerCarousel />
 
       {/* 2. CATEGORIES GRID */}
       <section className="section-block">
